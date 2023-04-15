@@ -13,6 +13,7 @@ This repository contains teaching materials associated with my teaching of quant
 - Datasets
 - Exercises and Labs
 - Shiny App
+- Jamovi Explained
 - Usefull links and websites
 
 ## Dataset Ideas
@@ -21,6 +22,21 @@ This repository contains teaching materials associated with my teaching of quant
 - Historical census data from the US
 - Life expectency per US county
 - EU-SILC public use microdata files
+- European Social Survey
+
+## European Social Survey
+
+Documentation from the website: https://ess-search.nsd.no/en/study/bdc7c350-1029-4cb3-9d5e-53f668b8fa74
+
+Universe: All persons aged 15 and over resident within private households, regardless of their nationality, citizenship, language or legal status, in the countries as listed in the "Geographical Coverage"
+
+Time period: 30-08-2018 - 27-01-2020
+
+Geographical scope: Europe
+
+Geographical Unit: Albania, Austria, Belgium, Bulgaria, Croatia, Cyprus, Czechia, Denmark, Estonia, Finland, France, Germany, Germany, Hungary, Iceland, Ireland, Italy, Latvia, Lithuania, Montenegro, Netherlands, Norway, Poland, Portugal, Romania, Serbia, Slovakia, Slovenia, Spain, Sweden, Sweden, Switzerland, United Kingdom
+
+Data type: Numeric
 
 ## Shiny App ideas
 
