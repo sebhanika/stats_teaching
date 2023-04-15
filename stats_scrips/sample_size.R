@@ -20,3 +20,6 @@
 # Libraries ---------------------------------------------------------------
 
 library(tidyverse)
+
+
+raw.ess <- read_csv(file = "data/ess/ESS-Data-Wizard-subset-2023-04-15.csv")
