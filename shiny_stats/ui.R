@@ -35,15 +35,15 @@ bootstrapPage('',
                     
                 ),
                 
-                # Further links ------------------------
+                # Descriptive stats --------------------
                 tabPanel("Descriptive stats"
                 ),
                 
-                # Further links ------------------------
+                # Distributions ------------------------
                 tabPanel("Distributions"
                 ),
                 
-                # Further links ------------------------
+                # Sample size --------------------------
                 tabPanel("Sample Size"
                 ),
                 
