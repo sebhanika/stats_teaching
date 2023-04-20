@@ -54,7 +54,6 @@ pop.grw <- pop %>%
   mutate(pop_grw_2016 = ((yr_2021-yr_2016)/yr_2016)*100)
 
 
-sum(is.na(pop.grw$pop_grw_2001))
 
 
 
