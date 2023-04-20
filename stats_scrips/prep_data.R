@@ -55,23 +55,23 @@ pop.grw <- pop %>%
 
 
 
+pop.ind <- get_eurostat("")
 
-
-  filter(indic_de %in% c("MEDAGEPOP", "DEPRATIO1", "DEPRATIO4", "PC_FM", "PC_Y15_24" ))
+pop.ind.new <- pop.ind %>% 
+  filter(indic_de %in% c("MEDAGEPOP", "DEPRATIO1",
+                         "DEPRATIO4", "PC_FM", "PC_Y15_24" ))
 
 
 
 
 gdp <- get_eurostat("nama_10r_2gdp")
 
-
-
 edu <- get_eurostat("edat_lfse_04")
 
 # expendiature on r&d
 gerd <- get_eurostat("rd_e_gerdreg")
 
-
+# hightech jobs
 htch_jobs <- get_eurostat("htec_emp_reg2")
 
 
@@ -98,25 +98,6 @@ try1 %>% filter(unit == "PC") %>%
 
 
 
-
-
-
-
-
-
-
-# create a sample data frame with some NAs
-df <- data.frame(
-  time = rep(2018:2021, 3),
-  geo = rep(c("A", "B", "C"), each = 4),
-  values = c(100, 120, NA, 150, 200, NA, 250, 300, 400, 450, NA, 550)
-)
-
-# calculate the percentage growth of values from each year to 2021, by geo, ignoring NAs
-df_growth <- df %>% 
-  group_by(geo) %>% 
-  mutate(growth = (values / values[time == 2021]) - 1) %>% 
-  filter(!is.na(values) & time != 2021)
 
 
 
