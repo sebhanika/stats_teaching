@@ -38,20 +38,56 @@ nuts2 <- nuts2.raw %>%
 
 
 
+# Load data ---------------------------------------------------------------
+
+names.datasets <- c("demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp", "edat_lfse_04", "rd_e_gerdreg",
+                    "rd_e_gerdreg", "htec_emp_reg2", "hlth_rs_bdsrg", "lfst_r_lfu3rt",
+                    "lfst_r_lfe2ehour", "lfst_r_lfe2en2", "demo_r_mlifexp")
+
+# Load each dataset using lapply
+datasets <- lapply(names.datasets, get_eurostat)
+
+names(datasets) <- names.datasets
+
+#list2env(datasets ,.GlobalEnv)
 
 
-# pop data ----------------------------------------------------------------
+
+
+
+
+
+pop.grw <- datasets[["demo_r_d2jan"]] %>% 
+  filter(sex == "T", age == "TOTAL") %>% 
+  mutate(time = format(as.Date(time), "%Y")) %>%
+  filter(time %in% c(2021, 2016 )) %>% 
+  pivot_wider(values_from = values, names_from = time, names_prefix = "pop_") %>% 
+  mutate(popgrw_2016 = ((pop_2021-pop_2016)/pop_2016)*100)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 pop <- get_eurostat("demo_r_d2jan")
 
-
-
-pop.grw <- pop %>% 
-  filter(sex == "T", age == "TOTAL") %>% 
-  mutate(time = format(as.Date(time), "%Y")) %>%
-  filter(time %in% c(2021, 2016, 2011, 2001)) %>% 
-  pivot_wider(values_from = values, names_from = time, names_prefix = "yr_") %>% 
-  mutate(pop_grw_2016 = ((yr_2021-yr_2016)/yr_2016)*100)
 
 
 
