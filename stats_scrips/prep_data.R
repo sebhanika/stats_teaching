@@ -17,7 +17,7 @@
 
 ## set working directory for to current folder
 
-library(tidyverse)
+library(tidyverse, warn.conflicts = F)
 library(geojsonsf)
 library(sf)
 library(eurostat)
@@ -40,80 +40,90 @@ nuts2 <- nuts2.raw %>%
 
 # Load data ---------------------------------------------------------------
 
-names.datasets <- c("demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp", "edat_lfse_04", "rd_e_gerdreg",
-                    "rd_e_gerdreg", "htec_emp_reg2", "hlth_rs_bdsrg", "lfst_r_lfu3rt",
+names.eurostat <- c("demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp", "edat_lfse_04", "rd_e_gerdreg",
+                    "rd_e_gerdreg", "htec_emp_reg2", "lfst_r_lfu3rt",
                     "lfst_r_lfe2ehour", "lfst_r_lfe2en2", "demo_r_mlifexp")
 
-# Load each dataset using lapply
-datasets <- lapply(names.datasets, get_eurostat)
 
-names(datasets) <- names.datasets
+# Define a function to download Eurostat data with the get_eurostat function
+download_eurostat <- function(dataset_name) {
+  # Download the data with the get_eurostat function and the time_format = "num" argument
+  data <- get_eurostat(dataset_name, time_format = "num")
+  
+  # Return the data
+  return(data)
+}
+
+
+
+# Load each dataset using lapply
+dat.eurostat <- lapply(names.eurostat, download_eurostat)
+
+names(dat.eurostat) <- names.eurostat
 
 #list2env(datasets ,.GlobalEnv)
 
 
-
-
-
-
-
-pop.grw <- datasets[["demo_r_d2jan"]] %>% 
+pop.grw <- dat.eurostat[["demo_r_d2jan"]] %>% 
   filter(sex == "T", age == "TOTAL") %>% 
-  mutate(time = format(as.Date(time), "%Y")) %>%
   filter(time %in% c(2021, 2016 )) %>% 
   pivot_wider(values_from = values, names_from = time, names_prefix = "pop_") %>% 
   mutate(popgrw_2016 = ((pop_2021-pop_2016)/pop_2016)*100)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pop <- get_eurostat("demo_r_d2jan")
-
-
-
-
-pop.ind <- get_eurostat("")
-
-pop.ind.new <- pop.ind %>% 
+pop.ind <- dat.eurostat[["demo_r_pjanind2"]] %>% 
   filter(indic_de %in% c("MEDAGEPOP", "DEPRATIO1",
-                         "DEPRATIO4", "PC_FM", "PC_Y15_24" ))
+                         "DEPRATIO4", "PC_FM", "PC_Y15_24" ),
+         time == 2021) %>% 
+  pivot_wider(values_from = values, names_from = c(indic_de, unit),names_sep = "__")
+  
+
+
+gdp <- dat.eurostat[["nama_10r_2gdp"]] %>% 
+  filter(time == 2021,
+         unit %in% c("MIO_EUR", # miollion euro
+                     "EUR_HAB", # euro per inhabitant
+                     "PPS_EU27_2020_HAB")# PPS, EU27 from 2020, per inhabitant 
+         )  %>%
+  pivot_wider(values_from = values, names_from = unit)
 
 
 
 
-gdp <- get_eurostat("nama_10r_2gdp")
-
-edu <- get_eurostat("edat_lfse_04")
-
-# expendiature on r&d
-gerd <- get_eurostat("rd_e_gerdreg")
-
-# hightech jobs
-htch_jobs <- get_eurostat("htec_emp_reg2")
+edu <- dat.eurostat[["edat_lfse_04"]] %>% 
+  filter(time == 2021, age == "Y25-64", sex != "T")
 
 
-hosp_beds <- get_eurostat("hlth_rs_bdsrg")
+# total expendiature on r&d
+gerd <- dat.eurostat[["rd_e_gerdreg"]] %>% 
+  filter(time == 2019,
+         unit %in% c("MIO_EUR", # million euro
+                     "EUR_HAB") # euro per inhabitant
+         ) %>% 
+  group_by(geo, time, unit) %>% 
+  summarize(values  = sum(values, na.rm = T)) %>% 
+  ungroup() %>% 
+  pivot_wider(values_from = values, names_from = unit)
 
-unemp <- get_eurostat("lfst_r_lfu3rt")
+
+htch_jobs <- dat.eurostat[["htec_emp_reg2"]] %>% 
+  filter(time == 2019, nace_r2 == "HTC") %>% 
+  pivot_wider(values_from = values, names_from = c(nace_r2, unit))
+  
+
+
+unemp <- dat.eurostat[["lfst_r_lfu3rt"]] %>% 
+  filter(isced11 == "TOTAL", 
+         time == 2021,
+         age == "Y20-64")
+
+
+
+unemp %>% filter(sex == "T") %>% 
+  ggplot(aes(x = values, fill = sex)) +
+  geom_histogram() +
+  facet_wrap(~isced11)
+
 
 hours_wrk <- get_eurostat("lfst_r_lfe2ehour")
 
@@ -124,10 +134,6 @@ le <- get_eurostat("demo_r_mlifexp")
 
 
 
-try1 %>% filter(unit == "PC") %>% 
-  ggplot(aes(x = values)) +
-  geom_density()+
-  facet_wrap(~indic_de)
 
 
 
