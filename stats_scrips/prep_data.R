@@ -21,6 +21,7 @@ library(tidyverse, warn.conflicts = F)
 library(geojsonsf)
 library(sf)
 library(eurostat)
+library(purrr)
 
 
 
@@ -38,7 +39,9 @@ nuts2 <- nuts2.raw %>%
 
 
 
-# Load data ---------------------------------------------------------------
+
+# Download data -----------------------------------------------------------
+
 
 names.eurostat <- c("demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp", 
                     "edat_lfse_04", "rd_e_gerdreg", "rd_e_gerdreg",
@@ -58,6 +61,32 @@ download_eurostat <- function(dataset_name) {
 dat.eurostat <- lapply(names.eurostat, download_eurostat)
 
 names(dat.eurostat) <- names.eurostat
+
+
+
+# Temp dave data ----------------------------------------------------------
+
+# here I temporarly save and reload the data so it becomes quicker to access between sessions. 
+# will be deleted later
+
+
+lapply(names(dat.eurostat), function(df) {
+  df_name <- file.path("data", paste0(df, ".rds")) # create a file path in the "data" folder
+  saveRDS(dat.eurostat[[df]], file = df_name) # save the current data frame to its own RDS file
+})
+
+
+
+names.eurostat <- list.files(path = "data", pattern = ".rds", full.names = TRUE)
+
+dat.eurostat <- names.eurostat %>% map(readRDS) 
+
+names(dat.eurostat) <- gsub("data/|\\.rds", "", names.eurostat)
+
+
+
+
+# data cleaning -----------------------------------------------------------
 
 
 ### Special datasets
