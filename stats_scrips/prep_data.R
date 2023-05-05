@@ -40,33 +40,31 @@ nuts2 <- nuts2.raw %>%
 
 # Load data ---------------------------------------------------------------
 
-names.eurostat <- c("demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp", "edat_lfse_04", "rd_e_gerdreg",
-                    "rd_e_gerdreg", "htec_emp_reg2", "lfst_r_lfu3rt",
-                    "lfst_r_lfe2ehour", "lfst_r_lfe2en2", "demo_r_mlifexp")
+names.eurostat <- c("demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp", 
+                    "edat_lfse_04", "rd_e_gerdreg", "rd_e_gerdreg",
+                    "htec_emp_reg2", "lfst_r_lfu3rt","lfst_r_lfe2ehour", 
+                    "lfst_r_lfe2en2", "demo_r_mlifexp")
 
-
-# Define a function to download Eurostat data with the get_eurostat function
+# Define a function to download Eurostat data 
 download_eurostat <- function(dataset_name) {
-  # Download the data with the get_eurostat function and the time_format = "num" argument
+  # Download the data with the time_format = "num" argument
   data <- get_eurostat(dataset_name, time_format = "num")
   
   # Return the data
   return(data)
 }
 
-
-
 # Load each dataset using lapply
 dat.eurostat <- lapply(names.eurostat, download_eurostat)
 
 names(dat.eurostat) <- names.eurostat
 
-#list2env(datasets ,.GlobalEnv)
 
-
+### Special datasets
 pop.grw <- dat.eurostat[["demo_r_d2jan"]] %>% 
-  filter(sex == "T", age == "TOTAL") %>% 
-  filter(time %in% c(2021, 2016 )) %>% 
+  filter(sex == "T",
+         age == "TOTAL",
+         time %in% c(2021, 2016 )) %>% 
   pivot_wider(values_from = values, names_from = time, names_prefix = "pop_") %>% 
   mutate(popgrw_2016 = ((pop_2021-pop_2016)/pop_2016)*100)
 
@@ -78,7 +76,6 @@ pop.ind <- dat.eurostat[["demo_r_pjanind2"]] %>%
   pivot_wider(values_from = values, names_from = c(indic_de, unit),names_sep = "__")
   
 
-
 gdp <- dat.eurostat[["nama_10r_2gdp"]] %>% 
   filter(time == 2021,
          unit %in% c("MIO_EUR", # miollion euro
@@ -86,8 +83,6 @@ gdp <- dat.eurostat[["nama_10r_2gdp"]] %>%
                      "PPS_EU27_2020_HAB")# PPS, EU27 from 2020, per inhabitant 
          )  %>%
   pivot_wider(values_from = values, names_from = unit)
-
-
 
 
 edu <- dat.eurostat[["edat_lfse_04"]] %>% 
@@ -118,6 +113,11 @@ unemp <- dat.eurostat[["lfst_r_lfu3rt"]] %>%
          age == "Y20-64")
 
 
+hours_wrk <- dat.eurostat[["lfst_r_lfe2ehour"]] %>% 
+  filter()
+
+
+
 
 unemp %>% filter(sex == "T") %>% 
   ggplot(aes(x = values, fill = sex)) +
@@ -125,7 +125,6 @@ unemp %>% filter(sex == "T") %>%
   facet_wrap(~isced11)
 
 
-hours_wrk <- get_eurostat("lfst_r_lfe2ehour")
 
 emp <- get_eurostat("lfst_r_lfe2en2")
 
