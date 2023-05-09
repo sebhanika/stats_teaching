@@ -17,13 +17,11 @@
 
 ## set working directory for to current folder
 
-library(tidyverse, warn.conflicts = F)
+library(tidyverse)
 library(geojsonsf)
 library(sf)
 library(eurostat)
 library(purrr)
-
-
 
 # geodata -----------------------------------------------------------------
 
@@ -84,12 +82,10 @@ dat.eurostat <- names.eurostat %>% map(readRDS)
 names(dat.eurostat) <- gsub("data/|\\.rds", "", names.eurostat)
 
 
-
-
 # data cleaning -----------------------------------------------------------
 
 
-### Special datasets
+### Regio data
 pop.grw <- dat.eurostat[["demo_r_d2jan"]] %>% 
   filter(sex == "T",
          age == "TOTAL",
@@ -100,8 +96,8 @@ pop.grw <- dat.eurostat[["demo_r_d2jan"]] %>%
 
 pop.ind <- dat.eurostat[["demo_r_pjanind2"]] %>% 
   filter(indic_de %in% c("MEDAGEPOP", "DEPRATIO1",
-                         "DEPRATIO4", "PC_FM", "PC_Y15_24" ),
-         time == 2021) %>% 
+                         "PC_FM", "PC_Y15_24" ),
+         time == 2021)%>% 
   pivot_wider(values_from = values, names_from = c(indic_de, unit),names_sep = "__")
   
 
@@ -114,16 +110,12 @@ gdp <- dat.eurostat[["nama_10r_2gdp"]] %>%
   pivot_wider(values_from = values, names_from = unit)
 
 
-edu <- dat.eurostat[["edat_lfse_04"]] %>% 
-  filter(time == 2021, age == "Y25-64", sex != "T")
-
-
 # total expendiature on r&d
 gerd <- dat.eurostat[["rd_e_gerdreg"]] %>% 
   filter(time == 2019,
          unit %in% c("MIO_EUR", # million euro
                      "EUR_HAB") # euro per inhabitant
-         ) %>% 
+  ) %>% 
   group_by(geo, time, unit) %>% 
   summarize(values  = sum(values, na.rm = T)) %>% 
   ungroup() %>% 
@@ -131,9 +123,24 @@ gerd <- dat.eurostat[["rd_e_gerdreg"]] %>%
 
 
 htch_jobs <- dat.eurostat[["htec_emp_reg2"]] %>% 
-  filter(time == 2019, nace_r2 == "HTC") %>% 
-  pivot_wider(values_from = values, names_from = c(nace_r2, unit))
-  
+  filter(time == 2019, nace_r2 == "HTC", unit == "PC_EMP", sex == "T") %>%
+  select(-c(unit, time)) %>% 
+  pivot_wider(values_from = values, names_from = nace_r2) %>% 
+  rename(HTC_2019 = HTC)
+
+
+
+
+
+
+### Employ data, sex and age
+
+
+# constrct common age group across all geos and time in 2021
+
+
+edu <- dat.eurostat[["edat_lfse_04"]] %>% 
+  filter(time == 2021, age == "Y25-64")
 
 
 unemp <- dat.eurostat[["lfst_r_lfu3rt"]] %>% 
@@ -143,27 +150,19 @@ unemp <- dat.eurostat[["lfst_r_lfu3rt"]] %>%
 
 
 hours_wrk <- dat.eurostat[["lfst_r_lfe2ehour"]] %>% 
-  filter()
+  filter(time == 2021, age == "Y25-64")
 
 
-
-
-unemp %>% filter(sex == "T") %>% 
-  ggplot(aes(x = values, fill = sex)) +
-  geom_histogram() +
-  facet_wrap(~isced11)
-
-
-
-emp <- get_eurostat("lfst_r_lfe2en2")
-
-
-le <- get_eurostat("demo_r_mlifexp")
+emp <- dat.eurostat[["lfst_r_lfe2en2"]] %>% 
+  filter(time == 2021, age == "Y25-64")
 
 
 
 
 
+
+le <- dat.eurostat[["demo_r_mlifexp"]] %>% 
+  filter(age == "Y1", time == 2021)
 
 
 
