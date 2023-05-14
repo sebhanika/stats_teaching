@@ -35,7 +35,7 @@ Alternative options are below:
 
     -   Population growth
 
-    -   Dependncy ratios
+    -   One Age Dependncy ratio
 
     -   Median age of populations
 
@@ -45,11 +45,11 @@ Alternative options are below:
 
     -   GDP per capita (calculatied)
 
-    -   R&D expedntirue
+    -   R&D expenditure
 
 -   Health
 
-    -   Hostipal beds
+    -   Hospital beds
 
     -   Life expectancy
 
@@ -59,7 +59,7 @@ Alternative options are below:
 
     -   hours worker
 
-    -   Employment numbers per fescotr
+    -   Employment numbers per sector
 
     -   employment growth (calculated)
 
