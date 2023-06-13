@@ -83,6 +83,20 @@ dat_eurostat <- names_eurostat %>% map(readRDS)
 names(dat_eurostat) <- gsub("data/|\\.rds", "", names_eurostat)
 
 
+
+
+
+# try rowbind
+
+
+list2env(dat_eurostat, envir = .GlobalEnv)
+
+
+
+combined_df <- do.call(dplyr::bind_rows, dat_eurostat)
+
+head(combined_df)
+
 # data cleaning -----------------------------------------------------------
 
 ### Regio data
