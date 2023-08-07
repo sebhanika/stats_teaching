@@ -15,7 +15,8 @@
 ##
 ## ---------------------------
 
-## set working directory for to current folder
+# Library and Settings --------------
+## /* cSpell:disable */
 
 library(tidyverse)
 library(geojsonsf)
@@ -37,8 +38,8 @@ download(
 
 # prep data
 nuts2 <- geojson_sf("data/NUTS_RG_20M_2021_4326.geojson") %>%
-  filter(LEVL_CODE == 2) %>%
-  filter(!grepl("^FRY|^FR$", NUTS_ID)) %>% # Exclude Oversee territories
+  subset(LEVL_CODE == 2) %>%
+  subset(!grepl("^FRY|^FR$", NUTS_ID)) %>% # Exclude Oversee territories
   rename(geo = NUTS_ID) %>%
   select(-c(NUTS_NAME, MOUNT_TYPE, COAST_TYPE, FID, LEVL_CODE))
 
@@ -67,7 +68,7 @@ names(dat_eurostat) <- names_eurostat
 
 # Temp dave data ----------------------------------------------------------
 
-# here I temporarly save and reload the data so it becomes
+# here I temporarily save and reload the data so it becomes
 # quicker to access between sessions will be deleted later
 
 lapply(names(dat_eurostat), function(df) {
@@ -75,7 +76,9 @@ lapply(names(dat_eurostat), function(df) {
   saveRDS(dat_eurostat[[df]], file = df_name)
 })
 
-# load data
+# load data,
+# this is not working anymore, it also loads
+# the new combined RDS, clean up later
 names_eurostat <- list.files(path = "data", pattern = ".rds", full.names = TRUE)
 
 dat_eurostat <- names_eurostat %>% map(readRDS)
@@ -85,17 +88,88 @@ names(dat_eurostat) <- gsub("data/|\\.rds", "", names_eurostat)
 
 
 
+#### Prep long format
 
-# try rowbind
+# Function to add the new column to each dataframe
+add_dataframe_name_column <- function(df, df_name) {
+  df$data_name <- df_name
+  return(df)
+}
+
+# Using lapply to add the new column to each dataframe
+df_list <- lapply(names(dat_eurostat), function(df_name) {
+  add_dataframe_name_column(dat_eurostat[[df_name]], df_name)
+})
+
+combined_df <- do.call(dplyr::bind_rows, df_list)
+
+saveRDS(combined_df, file = "data/combined.rds")
+
+# reload combined df in long format
+dat_long <- readRDS(file = "data/combined.rds")
+
+### next stept
 
 
-list2env(dat_eurostat, envir = .GlobalEnv)
 
 
 
-combined_df <- do.call(dplyr::bind_rows, dat_eurostat)
+# rename relevant variables
+# filter out dataframe
+# calculate relevant values (e.g population growth)
 
-head(combined_df)
+pop_grw <- dat_long %>%
+  filter(
+    time %in% c(2016:2021),
+    sex == "T",
+    data_name == "demo_r_d2jan",
+    age == "TOTAL",
+    nchar(geo) == 4
+  ) %>%
+  group_by(geo) %>%
+  arrange(time, .by_group = TRUE) %>%
+  mutate(pct_grw = ((values - lag(values, 5)) / lag(values, 5)) * 100) %>%
+  ungroup() %>%
+  drop_na(pct_grw)
+
+
+
+# plot map --------------
+
+
+dat_plot <- nuts2 %>%
+  left_join(pop_grw, by = "geo")
+
+
+
+ggplot(data = dat_plot) +
+  geom_sf(aes(fill = pct_grw))
+
+
+
+
+# trying out long format
+combined_df() %>%
+  filter(
+    data_name == "demo_r_d2jan",
+    sex == "T",
+    age == "TOTAL",
+    time == 2021,
+    nchar(geo) == 4
+  ) %>%
+  ggplot(aes(x = reorder(geo, -values), values)) +
+  geom_bar(stat = "identity") +
+  scale_y_log10() +
+  theme_bw()
+
+
+
+
+
+
+
+
+###### old code
 
 # data cleaning -----------------------------------------------------------
 
@@ -191,7 +265,10 @@ unemp <- dat_eurostat[["lfst_r_lfu3rt"]] %>%
 
 # hours worked
 hours_wrk <- dat_eurostat[["lfst_r_lfe2ehour"]] %>%
-  filter(time == 2021, age == "Y25-64") %>%
+  filter(
+    time == 2021,
+    age == "Y25-64"
+  ) %>%
   pivot_wider(
     names_from = sex, names_prefix = "hrs_",
     values_from = values
@@ -229,16 +306,3 @@ le <- dat_eurostat[["demo_r_mlifexp"]] %>%
     values_from = values
   ) %>%
   mutate(le_gap = le_F - le_M)
-
-
-
-
-
-data_try <- nuts2 %>%
-  as.data.frame() %>%
-  select(c(geo, URBN_TYPE, NAME_LATN)) %>%
-  left_join(select(pop_grw, c(geo, popgrw_2016_2021)), by = "geo") %>%
-  left_join(select(pop_ind, c(geo, MEDAGEPOP_YR, DEPRATIO1_PC)), by = "geo") %>%
-  left_join(select(gdp, c(geo, gdp_EUR_HAB, gdp_MIO_PPS_EU27_2020)), by = "geo") %>%
-  left_join(select(gerd, c(geo, gerd_EUR_HAB, gerd_MIO_EUR)), by = "geo") %>%
-  left_join(select(htch_jobs, c(geo, HTC_2019)), by = "geo")
