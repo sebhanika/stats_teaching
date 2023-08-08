@@ -66,28 +66,6 @@ dat_eurostat <- lapply(names_eurostat, download_eurostat)
 names(dat_eurostat) <- names_eurostat
 
 
-# Temp dave data ----------------------------------------------------------
-
-# here I temporarily save and reload the data so it becomes
-# quicker to access between sessions will be deleted later
-
-lapply(names(dat_eurostat), function(df) {
-  df_name <- file.path("data", paste0(df, ".rds"))
-  saveRDS(dat_eurostat[[df]], file = df_name)
-})
-
-# load data,
-# this is not working anymore, it also loads
-# the new combined RDS, clean up later
-names_eurostat <- list.files(path = "data", pattern = ".rds", full.names = TRUE)
-
-dat_eurostat <- names_eurostat %>% map(readRDS)
-
-names(dat_eurostat) <- gsub("data/|\\.rds", "", names_eurostat)
-
-
-
-
 #### Prep long format
 
 # Function to add the new column to each dataframe
@@ -101,27 +79,16 @@ df_list <- lapply(names(dat_eurostat), function(df_name) {
   add_dataframe_name_column(dat_eurostat[[df_name]], df_name)
 })
 
+# combine data
 combined_df <- do.call(dplyr::bind_rows, df_list)
 
+# save df
 saveRDS(combined_df, file = "data/combined.rds")
 
 # reload combined df in long format
 dat_long <- readRDS(file = "data/combined.rds")
 
-### next stept
-
-
-
-
-s
-# rename relevant variables
-# filter out dataframe
-# calculate relevant values (e.g population growth)
-
-
-
-
-
+# calculate population growth in percent
 pop_grw <- dat_long %>%
   filter(
     time %in% c(2016:2021),
@@ -137,40 +104,9 @@ pop_grw <- dat_long %>%
   drop_na(pct_grw)
 
 
-# plot map --------------
 
-
-dat_plot <- nuts2 %>%
-  left_join(pop_grw, by = "geo")
-
-
-
-ggplot(data = dat_plot) +
-  geom_sf(aes(fill = pct_grw))
-
-
-
-
-# trying out long format
-dat_long %>%
-  filter(
-    data_name == "demo_r_d2jan",
-    sex == "T",
-    age == "TOTAL",
-    time == 2021,
-    nchar(geo) == 4
-  ) %>%
-  ggplot(aes(x = (values))) +
-  geom_density() +
-  theme_bw()
-
-
-
-
-
-
-
-###### old code
+####### Code for creating individual datasets
+####### this code is not used for now
 
 # data cleaning -----------------------------------------------------------
 
