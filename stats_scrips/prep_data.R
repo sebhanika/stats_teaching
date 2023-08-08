@@ -113,10 +113,14 @@ dat_long <- readRDS(file = "data/combined.rds")
 
 
 
-
+s
 # rename relevant variables
 # filter out dataframe
 # calculate relevant values (e.g population growth)
+
+
+
+
 
 pop_grw <- dat_long %>%
   filter(
@@ -131,7 +135,6 @@ pop_grw <- dat_long %>%
   mutate(pct_grw = ((values - lag(values, 5)) / lag(values, 5)) * 100) %>%
   ungroup() %>%
   drop_na(pct_grw)
-
 
 
 # plot map --------------
@@ -149,7 +152,7 @@ ggplot(data = dat_plot) +
 
 
 # trying out long format
-combined_df() %>%
+dat_long %>%
   filter(
     data_name == "demo_r_d2jan",
     sex == "T",
@@ -157,11 +160,9 @@ combined_df() %>%
     time == 2021,
     nchar(geo) == 4
   ) %>%
-  ggplot(aes(x = reorder(geo, -values), values)) +
-  geom_bar(stat = "identity") +
-  scale_y_log10() +
+  ggplot(aes(x = (values))) +
+  geom_density() +
   theme_bw()
-
 
 
 
