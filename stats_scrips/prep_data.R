@@ -66,7 +66,26 @@ dat_eurostat <- lapply(names_eurostat, download_eurostat)
 names(dat_eurostat) <- names_eurostat
 
 
-#### Prep long format
+# Temp dave data ----------------------------------------------------------
+
+# here I temporarly save and reload the data so it becomes
+# quicker to access between sessions will be deleted later
+
+lapply(names(dat_eurostat), function(df) {
+  df_name <- file.path("data", paste0(df, ".rds"))
+  saveRDS(dat_eurostat[[df]], file = df_name)
+})
+
+# load data
+names_eurostat <- list.files(path = "data", pattern = ".rds", full.names = TRUE)
+
+dat_eurostat <- names_eurostat %>% map(readRDS)
+
+names(dat_eurostat) <- gsub("data/|\\.rds", "", names_eurostat)
+
+
+
+# Long format  --------------
 
 # Function to add the new column to each dataframe
 add_dataframe_name_column <- function(df, df_name) {
@@ -88,25 +107,7 @@ saveRDS(combined_df, file = "data/combined.rds")
 # reload combined df in long format
 dat_long <- readRDS(file = "data/combined.rds")
 
-# calculate population growth in percent
-pop_grw <- dat_long %>%
-  filter(
-    time %in% c(2016:2021),
-    sex == "T",
-    data_name == "demo_r_d2jan",
-    age == "TOTAL",
-    nchar(geo) == 4
-  ) %>%
-  group_by(geo) %>%
-  arrange(time, .by_group = TRUE) %>%
-  mutate(pct_grw = ((values - lag(values, 5)) / lag(values, 5)) * 100) %>%
-  ungroup() %>%
-  drop_na(pct_grw)
 
-
-
-####### Code for creating individual datasets
-####### this code is not used for now
 
 # data cleaning -----------------------------------------------------------
 
@@ -139,10 +140,7 @@ pop_ind <- dat_eurostat[["demo_r_pjanind2"]] %>%
 gdp <- dat_eurostat[["nama_10r_2gdp"]] %>%
   filter(
     time == 2021,
-    unit %in% c(
-      "EUR_HAB", # euro per inhabitant
-      "MIO_PPS_EU27_2020"
-    ) # PPS, EU27 from 2020, per inhabitant
+    unit == c("MIO_PPS_EU27_2020") # PPS, EU27 from 2020, per inhabitant
   ) %>%
   pivot_wider(
     values_from = values,
@@ -155,20 +153,20 @@ gdp <- dat_eurostat[["nama_10r_2gdp"]] %>%
 gerd <- dat_eurostat[["rd_e_gerdreg"]] %>%
   filter(
     time == 2019,
-    unit %in% c(
-      "MIO_EUR", # million euro
-      "EUR_HAB"
-    ) # euro per inhabitant
+    sectperf == "TOTAL",
+    unit == c("EUR_HAB") # euro per inhabitant
   ) %>%
-  group_by(geo, time, unit) %>%
-  summarize(values = sum(values, na.rm = TRUE)) %>%
-  ungroup() %>%
   pivot_wider(values_from = values, names_from = unit, names_prefix = "gerd_")
 
 
 # hightech jobs
 htch_jobs <- dat_eurostat[["htec_emp_reg2"]] %>%
-  filter(time == 2019, nace_r2 == "HTC", unit == "PC_EMP", sex == "T") %>%
+  filter(
+    time == 2019,
+    nace_r2 == "HTC",
+    unit == "PC_EMP",
+    sex == "T"
+  ) %>%
   select(-c(unit, time)) %>%
   pivot_wider(values_from = values, names_from = nace_r2) %>%
   rename(HTC_2019 = HTC)
@@ -221,13 +219,13 @@ emp <- dat_eurostat[["lfst_r_lfe2en2"]] %>%
     nace_r2 %in% c(
       "B-E", # Industry
       "G-I", # Retail and low-skill services
-      "M_N" # Knowdlege industry
+      "M_N" # Knowledge industry
     )
   ) %>%
   mutate(nace_r2 = case_when(
-    nace_r2 == "B-E" ~ "Industry",
+    nace_r2 == "B-E" ~ "industry",
     nace_r2 == "G-I" ~ "low_skill_jobs",
-    nace_r2 == "M_N" ~ "Knowdlege_jobs"
+    nace_r2 == "M_N" ~ "Knowledge_jobs"
   )) %>%
   pivot_wider(
     names_from = nace_r2,
@@ -243,3 +241,54 @@ le <- dat_eurostat[["demo_r_mlifexp"]] %>%
     values_from = values
   ) %>%
   mutate(le_gap = le_F - le_M)
+
+
+
+# combine data
+data_try <- nuts2 %>%
+  # as.data.frame() %>%
+  select(c(geo, URBN_TYPE, NAME_LATN)) %>%
+  left_join(select(pop_grw, c(geo, popgrw_2016_2021)), by = "geo") %>%
+  left_join(select(pop_ind, c(geo, MEDAGEPOP_YR, DEPRATIO1_PC)), by = "geo") %>%
+  left_join(select(gdp, c(geo, gdp_MIO_PPS_EU27_2020)), by = "geo") %>%
+  left_join(select(gerd, c(geo, gerd_EUR_HAB)), by = "geo") %>%
+  left_join(select(htch_jobs, c(geo, HTC_2019)), by = "geo") %>%
+  left_join(select(le, c(geo, le_T, le_gap)), by = "geo") %>%
+  left_join(select(emp, c(geo, industry, low_skill_jobs)), by = "geo") %>%
+  left_join(select(hours_wrk, c(geo, hrs_gap)), by = "geo")
+
+
+
+data_try %>%
+  ggplot(aes(x = hrs_gap, y = le_gap)) +
+  geom_point() +
+  geom_smooth(method = lm)
+
+
+ggplot(data = data_try) +
+  geom_sf(aes(fill = hrs_gap)) +
+  theme_void()
+
+ggplot(data = data_try) +
+  geom_sf(aes(fill = le_gap)) +
+  theme_void()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+reg_try <- lm(le_gap ~ hrs_gap,
+  data = data_try
+)
+summary(reg_try)
