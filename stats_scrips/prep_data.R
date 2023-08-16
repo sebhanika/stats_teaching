@@ -50,7 +50,7 @@ names_eurostat <- c(
   "demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp",
   "edat_lfse_04", "rd_e_gerdreg", "rd_e_gerdreg",
   "htec_emp_reg2", "lfst_r_lfu3rt", "lfst_r_lfe2ehour",
-  "lfst_r_lfe2en2", "demo_r_mlifexp"
+  "lfst_r_lfe2en2", "demo_r_mlifexp", "tgs00099"
 )
 
 # Define a function to download Eurostat data
@@ -247,48 +247,37 @@ le <- dat_eurostat[["demo_r_mlifexp"]] %>%
 # combine data
 data_try <- nuts2 %>%
   # as.data.frame() %>%
-  select(c(geo, URBN_TYPE, NAME_LATN)) %>%
+  select(c(geo, NAME_LATN)) %>%
   left_join(select(pop_grw, c(geo, popgrw_2016_2021)), by = "geo") %>%
   left_join(select(pop_ind, c(geo, MEDAGEPOP_YR, DEPRATIO1_PC)), by = "geo") %>%
   left_join(select(gdp, c(geo, gdp_MIO_PPS_EU27_2020)), by = "geo") %>%
   left_join(select(gerd, c(geo, gerd_EUR_HAB)), by = "geo") %>%
   left_join(select(htch_jobs, c(geo, HTC_2019)), by = "geo") %>%
-  left_join(select(le, c(geo, le_T, le_gap)), by = "geo") %>%
+  left_join(select(le, c(geo, le_T, le_M, le_F, le_gap)), by = "geo") %>%
   left_join(select(emp, c(geo, industry, low_skill_jobs)), by = "geo") %>%
-  left_join(select(hours_wrk, c(geo, hrs_gap)), by = "geo")
+  left_join(select(hours_wrk, c(geo, hrs_T, hrs_gap)), by = "geo")
+
+
+
+
+
 
 
 
 data_try %>%
-  ggplot(aes(x = hrs_gap, y = le_gap)) +
-  geom_point() +
-  geom_smooth(method = lm)
+  as_data_frame() %>%
+  ggplot(aes(x = le_gap, y = log(industry))) +
+  geom_point()
 
 
-ggplot(data = data_try) +
-  geom_sf(aes(fill = hrs_gap)) +
-  theme_void()
-
-ggplot(data = data_try) +
-  geom_sf(aes(fill = le_gap)) +
-  theme_void()
+data_try %>%
+  ggplot(aes(x = log(industry))) +
+  geom_density()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-reg_try <- lm(le_gap ~ hrs_gap,
+reg_try <- lm(le_gap ~ hrs_gap + log(industry),
   data = data_try
 )
 summary(reg_try)
+
+plot(reg_try)
