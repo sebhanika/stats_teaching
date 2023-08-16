@@ -108,28 +108,29 @@ saveRDS(combined_df, file = "data/combined.rds")
 dat_long <- readRDS(file = "data/combined.rds")
 
 
-
 # data cleaning -----------------------------------------------------------
 
 ### Regio data
 pop_grw <- dat_eurostat[["demo_r_d2jan"]] %>%
   filter(
     sex == "T",
+    nchar(geo) == 4,
     age == "TOTAL",
-    time %in% c(2021, 2016)
+    time %in% c(2019, 2014)
   ) %>%
   pivot_wider(
     values_from = values,
     names_from = time,
     names_prefix = "pop_"
   ) %>%
-  mutate(popgrw_2016_2021 = ((pop_2021 - pop_2016) / pop_2016) * 100)
+  mutate(popgrw_2014_2019 = ((pop_2019 - pop_2014) / pop_2014) * 100)
 
 
 pop_ind <- dat_eurostat[["demo_r_pjanind2"]] %>%
   filter(
     indic_de %in% c("MEDAGEPOP", "DEPRATIO1"),
-    time == 2021
+    nchar(geo) == 4,
+    time == 2019
   ) %>%
   pivot_wider(
     values_from = values,
@@ -139,8 +140,9 @@ pop_ind <- dat_eurostat[["demo_r_pjanind2"]] %>%
 
 gdp <- dat_eurostat[["nama_10r_2gdp"]] %>%
   filter(
-    time == 2021,
-    unit == c("MIO_PPS_EU27_2020") # PPS, EU27 from 2020, per inhabitant
+    time == 2019,
+    nchar(geo) == 4,
+    unit == "MIO_PPS_EU27_2020" # PPS, EU27 from 2020, per inhabitant
   ) %>%
   pivot_wider(
     values_from = values,
@@ -153,16 +155,22 @@ gdp <- dat_eurostat[["nama_10r_2gdp"]] %>%
 gerd <- dat_eurostat[["rd_e_gerdreg"]] %>%
   filter(
     time == 2019,
+    nchar(geo) == 4,
     sectperf == "TOTAL",
-    unit == c("EUR_HAB") # euro per inhabitant
+    unit == "EUR_HAB" # euro per inhabitant
   ) %>%
-  pivot_wider(values_from = values, names_from = unit, names_prefix = "gerd_")
+  pivot_wider(
+    values_from = values,
+    names_from = unit,
+    names_prefix = "gerd_"
+  )
 
 
 # hightech jobs
 htch_jobs <- dat_eurostat[["htec_emp_reg2"]] %>%
   filter(
     time == 2019,
+    nchar(geo) == 4,
     nace_r2 == "HTC",
     unit == "PC_EMP",
     sex == "T"
@@ -175,8 +183,9 @@ htch_jobs <- dat_eurostat[["htec_emp_reg2"]] %>%
 # education
 edu <- dat_eurostat[["edat_lfse_04"]] %>%
   filter(
-    time == 2021,
+    time == 2019,
     age == "Y25-64",
+    nchar(geo) == 4,
     isced11 == "ED5-8" # tertiary
   ) %>%
   mutate(isced11 = "tertiary") %>%
@@ -191,7 +200,8 @@ edu <- dat_eurostat[["edat_lfse_04"]] %>%
 unemp <- dat_eurostat[["lfst_r_lfu3rt"]] %>%
   filter(
     isced11 == "TOTAL",
-    time == 2021,
+    nchar(geo) == 4,
+    time == 2019,
     age == "Y20-64",
     sex == "T"
   ) %>%
@@ -201,7 +211,8 @@ unemp <- dat_eurostat[["lfst_r_lfu3rt"]] %>%
 # hours worked
 hours_wrk <- dat_eurostat[["lfst_r_lfe2ehour"]] %>%
   filter(
-    time == 2021,
+    time == 2019,
+    nchar(geo) == 4,
     age == "Y25-64"
   ) %>%
   pivot_wider(
@@ -213,8 +224,9 @@ hours_wrk <- dat_eurostat[["lfst_r_lfe2ehour"]] %>%
 
 emp <- dat_eurostat[["lfst_r_lfe2en2"]] %>%
   filter(
-    time == 2021,
+    time == 2019,
     age == "Y25-64",
+    nchar(geo) == 4,
     sex == "T",
     nace_r2 %in% c(
       "B-E", # Industry
@@ -235,7 +247,11 @@ emp <- dat_eurostat[["lfst_r_lfe2en2"]] %>%
 
 # life exptectancy data
 le <- dat_eurostat[["demo_r_mlifexp"]] %>%
-  filter(age == "Y1", time == 2021) %>%
+  filter(
+    age == "Y1",
+    nchar(geo) == 4,
+    time == 2019
+  ) %>%
   pivot_wider(
     names_from = sex, names_prefix = "le_",
     values_from = values
@@ -243,21 +259,29 @@ le <- dat_eurostat[["demo_r_mlifexp"]] %>%
   mutate(le_gap = le_F - le_M)
 
 
+# migration
+mig <- dat_eurostat[["tgs00099"]] %>%
+  filter(
+    time == 2019,
+    indic_de == "CNMIGRATRT"
+  ) %>%
+  rename(mig_rate = values)
+
+
 
 # combine data
 data_try <- nuts2 %>%
   # as.data.frame() %>%
   select(c(geo, NAME_LATN)) %>%
-  left_join(select(pop_grw, c(geo, popgrw_2016_2021)), by = "geo") %>%
+  left_join(select(pop_grw, c(geo, popgrw_2014_2019)), by = "geo") %>%
   left_join(select(pop_ind, c(geo, MEDAGEPOP_YR, DEPRATIO1_PC)), by = "geo") %>%
   left_join(select(gdp, c(geo, gdp_MIO_PPS_EU27_2020)), by = "geo") %>%
   left_join(select(gerd, c(geo, gerd_EUR_HAB)), by = "geo") %>%
   left_join(select(htch_jobs, c(geo, HTC_2019)), by = "geo") %>%
   left_join(select(le, c(geo, le_T, le_M, le_F, le_gap)), by = "geo") %>%
   left_join(select(emp, c(geo, industry, low_skill_jobs)), by = "geo") %>%
-  left_join(select(hours_wrk, c(geo, hrs_T, hrs_gap)), by = "geo")
-
-
+  left_join(select(hours_wrk, c(geo, hrs_T, hrs_gap)), by = "geo") %>%
+  left_join(select(mig, c(geo, mig_rate)), by = "geo")
 
 
 
