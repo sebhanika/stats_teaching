@@ -39,14 +39,21 @@ download(
 # prep data
 nuts2 <- geojson_sf("data/NUTS_RG_20M_2021_4326.geojson") %>%
   subset(LEVL_CODE == 2) %>%
-  subset(!grepl("^FRY|^FR$", NUTS_ID)) %>% # Exclude Oversee territories
   rename(geo = NUTS_ID) %>%
   select(-c(NUTS_NAME, MOUNT_TYPE, COAST_TYPE, FID, LEVL_CODE))
 
-# Download data -----------------------------------------------------------
 
-# names of datasets
-names_eurostat <- c(
+
+nuts2 <- eurostat_geodata_60_2016 %>%
+  filter(LEVL_CODE == 2) %>%
+  subset(!grepl("^FRY|^FR$", NUTS_ID)) %>% # Exclude Oversee territories
+
+
+
+  # Download data -----------------------------------------------------------
+
+  # names of datasets
+  names_eurostat() <- c(
   "demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp",
   "edat_lfse_04", "rd_e_gerdreg", "rd_e_gerdreg",
   "htec_emp_reg2", "lfst_r_lfu3rt", "lfst_r_lfe2ehour",
@@ -128,14 +135,11 @@ pop_grw <- dat_eurostat[["demo_r_d2jan"]] %>%
 
 pop_ind <- dat_eurostat[["demo_r_pjanind2"]] %>%
   filter(
-    indic_de %in% c("MEDAGEPOP", "DEPRATIO1"),
+    indic_de == "MEDAGEPOP",
     nchar(geo) == 4,
     time == 2019
   ) %>%
-  pivot_wider(
-    values_from = values,
-    names_from = c(indic_de, unit), names_sep = "_"
-  )
+  rename(MEDAGEPOP_YR = values)
 
 
 gdp <- dat_eurostat[["nama_10r_2gdp"]] %>%
@@ -273,35 +277,31 @@ mig <- dat_eurostat[["tgs00099"]] %>%
 data_try <- nuts2 %>%
   # as.data.frame() %>%
   select(c(geo, NAME_LATN)) %>%
-  left_join(select(pop_grw, c(geo, popgrw_2014_2019)), by = "geo") %>%
-  left_join(select(pop_ind, c(geo, MEDAGEPOP_YR, DEPRATIO1_PC)), by = "geo") %>%
+  left_join(select(pop_grw, c(geo, pop_2019, popgrw_2014_2019)), by = "geo") %>%
+  left_join(select(pop_ind, c(geo, MEDAGEPOP_YR)), by = "geo") %>%
   left_join(select(gdp, c(geo, gdp_MIO_PPS_EU27_2020)), by = "geo") %>%
   left_join(select(gerd, c(geo, gerd_EUR_HAB)), by = "geo") %>%
   left_join(select(htch_jobs, c(geo, HTC_2019)), by = "geo") %>%
-  left_join(select(le, c(geo, le_T, le_M, le_F, le_gap)), by = "geo") %>%
+  left_join(select(le, c(geo, le_T, le_gap)), by = "geo") %>%
   left_join(select(emp, c(geo, industry, low_skill_jobs)), by = "geo") %>%
   left_join(select(hours_wrk, c(geo, hrs_T, hrs_gap)), by = "geo") %>%
-  left_join(select(mig, c(geo, mig_rate)), by = "geo")
+  left_join(select(mig, c(geo, mig_rate)), by = "geo") %>%
+  mutate(gdp_cap = gdp_MIO_PPS_EU27_2020 / pop_2019)
 
 
+colnames(data_try)
+
+
+
+# divide by euopre
 
 
 
 
 data_try %>%
-  as_data_frame() %>%
-  ggplot(aes(x = le_gap, y = log(industry))) +
-  geom_point()
-
-
-data_try %>%
-  ggplot(aes(x = log(industry))) +
+  mutate(gdp_cap = gdp_MIO_PPS_EU27_2020 / pop_2019) %>%
+  ggplot(aes(x = (gdp_cap))) +
   geom_density()
 
 
-reg_try <- lm(le_gap ~ hrs_gap + log(industry),
-  data = data_try
-)
-summary(reg_try)
-
-plot(reg_try)
+s
