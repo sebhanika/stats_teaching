@@ -27,37 +27,60 @@ library(downloader)
 
 # geodata -----------------------------------------------------------------
 
-# download data
-url_map <- "https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_20M_2021_4326.geojson" # nolint: line_length_linter.
+# regions
+# downloaded from https://unstats.un.org/unsd/methodology/m49/overview/
 
-download(
-  url = url_map,
-  dest = "data/NUTS_RG_20M_2021_4326.geojson",
-  mode = "wb"
-) # downloads zip folder into current directory
+# regions by UN geo scheme
+regions <- read.csv(
+  file = "data/UNSD — Methodology.csv",
+  header = TRUE, sep = ";"
+) %>%
+  janitor::clean_names() %>%
+  select(c(sub_region_name, country_or_area, iso_alpha2_code)) %>%
+  mutate(iso_alpha2_code = case_when(
+    iso_alpha2_code == "GR" ~ "EL",
+    iso_alpha2_code == "GB" ~ "UK",
+    TRUE ~ iso_alpha2_code
+  ))
 
-# prep data
-nuts2 <- geojson_sf("data/NUTS_RG_20M_2021_4326.geojson") %>%
-  subset(LEVL_CODE == 2) %>%
-  rename(geo = NUTS_ID) %>%
-  select(-c(NUTS_NAME, MOUNT_TYPE, COAST_TYPE, FID, LEVL_CODE))
+
+# bluebanaa
+
+blue_banana <- read.csv(file = "data/blue_banana.csv") %>%
+  janitor::clean_names() %>%
+  mutate(blue_banana = 1) %>%
+  select(c(nuts_id, blue_banana))
 
 
 
+
+
+# nut2 geodata
 nuts2 <- eurostat_geodata_60_2016 %>%
-  filter(LEVL_CODE == 2) %>%
-  subset(!grepl("^FRY|^FR$", NUTS_ID)) # Exclude Oversee territories
-
-
-
+  janitor::clean_names() %>%
+  filter(levl_code == 2) %>%
+  subset(!grepl("^FRY|^FR$", nuts_id)) %>% # Exclude Oversee territories
+  select(c(cntr_code, name_latn, geo, geometry)) %>%
+  left_join(regions, by = c("cntr_code" = "iso_alpha2_code")) %>%
+  rename(
+    nuts_name = name_latn,
+    region = sub_region_name,
+    country = country_or_area
+  ) %>%
+  relocate(cntr_code, .before = region) %>%
+  relocate(country, .before = cntr_code) %>%
+  left_join(blue_banana, by = c("geo" = "nuts_id")) %>%
+  mutate(blue_banana = ifelse(is.na(blue_banana), 0, 1))
 
 
 ggplot(data = nuts2) +
-  geom_sf(aes(fill = LEVL_CODE)) +
+  geom_sf(aes(fill = blue_banana)) +
   coord_sf(
-    xlim = c(-20, 45), ylim = c(30, 73),
+    xlim = c(-26, 45), ylim = c(30, 73),
     expand = FALSE
   )
+
+
 
 
 # Download data -----------------------------------------------------------
@@ -286,7 +309,6 @@ mig <- dat_eurostat[["tgs00099"]] %>%
 # combine data
 data_try <- nuts2 %>%
   # as.data.frame() %>%
-  select(c(geo, NAME_LATN)) %>%
   left_join(select(pop_grw, c(geo, pop_2019, popgrw_2014_2019)), by = "geo") %>%
   left_join(select(pop_ind, c(geo, MEDAGEPOP_YR)), by = "geo") %>%
   left_join(select(gdp, c(geo, gdp_MIO_PPS_EU27_2020)), by = "geo") %>%
@@ -301,17 +323,27 @@ data_try <- nuts2 %>%
 
 colnames(data_try)
 
-
-
 # divide by euopre
 
+data_try %>%
+  filter(country == "France") %>%
+  mutate(blue_b = as.factor(blue_banana)) %>%
+  ggplot() +
+  geom_boxplot(aes(x = blue_b, y = gdp_MIO_PPS_EU27_2020))
 
 
 
 data_try %>%
-  mutate(gdp_cap = gdp_MIO_PPS_EU27_2020 / pop_2019) %>%
-  ggplot(aes(x = (gdp_cap))) +
-  geom_density()
+  ggplot(aes(x = hrs_T, y = le_T)) +
+  geom_point() +
+  facet_wrap(~region) +
+  theme_bw()
 
 
-s
+
+ggplot(data = data_try) +
+  geom_sf(aes(fill = hrs_T)) +
+  coord_sf(
+    xlim = c(-26, 45), ylim = c(30, 73),
+    expand = FALSE
+  )
