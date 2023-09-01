@@ -46,14 +46,24 @@ nuts2 <- geojson_sf("data/NUTS_RG_20M_2021_4326.geojson") %>%
 
 nuts2 <- eurostat_geodata_60_2016 %>%
   filter(LEVL_CODE == 2) %>%
-  subset(!grepl("^FRY|^FR$", NUTS_ID)) %>% # Exclude Oversee territories
+  subset(!grepl("^FRY|^FR$", NUTS_ID)) # Exclude Oversee territories
 
 
 
-  # Download data -----------------------------------------------------------
 
-  # names of datasets
-  names_eurostat() <- c(
+
+ggplot(data = nuts2) +
+  geom_sf(aes(fill = LEVL_CODE)) +
+  coord_sf(
+    xlim = c(-20, 45), ylim = c(30, 73),
+    expand = FALSE
+  )
+
+
+# Download data -----------------------------------------------------------
+
+# names of datasets
+names_eurostat() <- c(
   "demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp",
   "edat_lfse_04", "rd_e_gerdreg", "rd_e_gerdreg",
   "htec_emp_reg2", "lfst_r_lfu3rt", "lfst_r_lfe2ehour",
