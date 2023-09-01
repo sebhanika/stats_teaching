@@ -52,9 +52,6 @@ blue_banana <- read.csv(file = "data/blue_banana.csv") %>%
   select(c(nuts_id, blue_banana))
 
 
-
-
-
 # nut2 geodata
 nuts2 <- eurostat_geodata_60_2016 %>%
   janitor::clean_names() %>%
@@ -86,7 +83,7 @@ ggplot(data = nuts2) +
 # Download data -----------------------------------------------------------
 
 # names of datasets
-names_eurostat() <- c(
+names_eurostat <- c(
   "demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp",
   "edat_lfse_04", "rd_e_gerdreg", "rd_e_gerdreg",
   "htec_emp_reg2", "lfst_r_lfu3rt", "lfst_r_lfe2ehour",
@@ -306,7 +303,7 @@ mig <- dat_eurostat[["tgs00099"]] %>%
 
 
 
-# combine data
+# combine data and calcualte relevant new data
 data_try <- nuts2 %>%
   # as.data.frame() %>%
   left_join(select(pop_grw, c(geo, pop_2019, popgrw_2014_2019)), by = "geo") %>%
@@ -320,8 +317,29 @@ data_try <- nuts2 %>%
   left_join(select(mig, c(geo, mig_rate)), by = "geo") %>%
   mutate(gdp_cap = gdp_MIO_PPS_EU27_2020 / pop_2019)
 
+# clean workspace
+rm(
+  blue_banana, edu, emp, gdp, gerd,
+  hours_wrk, htch_jobs, ke, mig, nuts2,
+  pop_grw, pop_ind, regions, unemp
+)
 
-colnames(data_try)
+# check for missing data by country and variable
+# and remove countries with too much missing data
+
+
+
+countries_missing <- data_try %>%
+  group_by(country) %>%
+  summarize(across(
+    .cols = where(is.numeric),
+    .names = "{.col}_{.fn}", # double for pivoting later
+    .fns = list(nmiss = ~ sum(is.na(.)) / length(.) * 100)
+  ))
+
+
+
+
 
 # divide by euopre
 
@@ -338,6 +356,11 @@ data_try %>%
   geom_point() +
   facet_wrap(~region) +
   theme_bw()
+
+
+
+
+
 
 
 
