@@ -25,6 +25,8 @@ library(eurostat)
 library(purrr)
 library(downloader)
 
+`%!in%` <- Negate(`%in%`) # function needed for later
+
 # geodata -----------------------------------------------------------------
 
 # regions
@@ -85,9 +87,9 @@ ggplot(data = nuts2) +
 # names of datasets
 names_eurostat <- c(
   "demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp",
-  "edat_lfse_04", "rd_e_gerdreg", "rd_e_gerdreg",
-  "htec_emp_reg2", "lfst_r_lfu3rt", "lfst_r_lfe2ehour",
-  "lfst_r_lfe2en2", "demo_r_mlifexp", "tgs00099"
+  "edat_lfse_04", "lfst_r_lfu3rt",
+  "lfst_r_lfe2ehour", "lfst_r_lfe2en2",
+  "demo_r_mlifexp", "tgs00099"
 )
 
 # Define a function to download Eurostat data
@@ -169,7 +171,7 @@ pop_ind <- dat_eurostat[["demo_r_pjanind2"]] %>%
     nchar(geo) == 4,
     time == 2019
   ) %>%
-  rename(MEDAGEPOP_YR = values)
+  rename(median_age = values)
 
 
 gdp <- dat_eurostat[["nama_10r_2gdp"]] %>%
@@ -182,36 +184,9 @@ gdp <- dat_eurostat[["nama_10r_2gdp"]] %>%
     values_from = values,
     names_from = unit,
     names_prefix = "gdp_"
-  )
-
-
-# total expendiature on r&d
-gerd <- dat_eurostat[["rd_e_gerdreg"]] %>%
-  filter(
-    time == 2019,
-    nchar(geo) == 4,
-    sectperf == "TOTAL",
-    unit == "EUR_HAB" # euro per inhabitant
   ) %>%
-  pivot_wider(
-    values_from = values,
-    names_from = unit,
-    names_prefix = "gerd_"
-  )
+  rename(gdp = gdp_MIO_PPS_EU27_2020)
 
-
-# hightech jobs
-htch_jobs <- dat_eurostat[["htec_emp_reg2"]] %>%
-  filter(
-    time == 2019,
-    nchar(geo) == 4,
-    nace_r2 == "HTC",
-    unit == "PC_EMP",
-    sex == "T"
-  ) %>%
-  select(-c(unit, time)) %>%
-  pivot_wider(values_from = values, names_from = nace_r2) %>%
-  rename(HTC_2019 = HTC)
 
 
 # education
@@ -269,13 +244,17 @@ emp <- dat_eurostat[["lfst_r_lfe2en2"]] %>%
     )
   ) %>%
   mutate(nace_r2 = case_when(
-    nace_r2 == "B-E" ~ "industry",
+    nace_r2 == "B-E" ~ "industry_jobs",
     nace_r2 == "G-I" ~ "low_skill_jobs",
     nace_r2 == "M_N" ~ "Knowledge_jobs"
   )) %>%
   pivot_wider(
     names_from = nace_r2,
     values_from = values
+  ) %>%
+  mutate(
+    industry_jobs = industry_jobs * 1000,
+    low_skill_jobs = low_skill_jobs * 1000
   )
 
 
@@ -299,35 +278,35 @@ mig <- dat_eurostat[["tgs00099"]] %>%
     time == 2019,
     indic_de == "CNMIGRATRT"
   ) %>%
-  rename(mig_rate = values)
+  rename(mig_rate = values) %>%
+  mutate(mig_rate = mig_rate * 1000)
 
 
 
 # combine data and calcualte relevant new data
+
 data_try <- nuts2 %>%
   # as.data.frame() %>%
   left_join(select(pop_grw, c(geo, pop_2019, popgrw_2014_2019)), by = "geo") %>%
-  left_join(select(pop_ind, c(geo, MEDAGEPOP_YR)), by = "geo") %>%
-  left_join(select(gdp, c(geo, gdp_MIO_PPS_EU27_2020)), by = "geo") %>%
-  left_join(select(gerd, c(geo, gerd_EUR_HAB)), by = "geo") %>%
-  left_join(select(htch_jobs, c(geo, HTC_2019)), by = "geo") %>%
+  left_join(select(pop_ind, c(geo, median_age)), by = "geo") %>%
+  left_join(select(gdp, c(geo, gdp)), by = "geo") %>%
   left_join(select(le, c(geo, le_T, le_gap)), by = "geo") %>%
-  left_join(select(emp, c(geo, industry, low_skill_jobs)), by = "geo") %>%
+  left_join(select(emp, c(geo, industry_jobs, low_skill_jobs)), by = "geo") %>%
   left_join(select(hours_wrk, c(geo, hrs_T, hrs_gap)), by = "geo") %>%
-  left_join(select(mig, c(geo, mig_rate)), by = "geo") %>%
-  mutate(gdp_cap = gdp_MIO_PPS_EU27_2020 / pop_2019)
+  left_join(select(mig, c(geo, mig_rate)), by = "geo")
 
 # clean workspace
 rm(
-  blue_banana, edu, emp, gdp, gerd,
-  hours_wrk, htch_jobs, ke, mig, nuts2,
-  pop_grw, pop_ind, regions, unemp
+  edu, emp, gdp, hours_wrk,
+  le, mig,
+  pop_grw, pop_ind, unemp
 )
 
 # check for missing data by country and variable
 # and remove countries with too much missing data
 
 
+# Check data --------------
 
 countries_missing <- data_try %>%
   group_by(country) %>%
@@ -337,36 +316,39 @@ countries_missing <- data_try %>%
     .fns = list(nmiss = ~ sum(is.na(.)) / length(.) * 100)
   ))
 
+categ_missing <- data_try %>%
+  filter(country %!in% c(
+    "United Kingdom of Great Britain and Northern Ireland",
+    "Albania", "Liechtenstein", "Iceland", "Norway", "Switzerland",
+    "Serbia"
+  )) %>%
+  group_by(country) %>%
+  summarize(across(
+    .cols = where(is.numeric),
+    .names = "{.col}_{.fn}", # double for pivoting later
+    .fns = list(nmiss = ~ sum(is.na(.)) / length(.) * 100)
+  ))
 
+View(categ_missing)
 
+# divide by europe
 
+# export data
 
-# divide by euopre
+export_data <- data_try %>%
+  as_tibble() %>%
+  select(-c(geometry)) %>%
+  filter(country %!in% c(
+    "United Kingdom of Great Britain and Northern Ireland",
+    "Albania", "Liechtenstein", "Iceland", "Norway", "Switzerland",
+    "Serbia"
+  ))
 
-data_try %>%
-  filter(country == "France") %>%
-  mutate(blue_b = as.factor(blue_banana)) %>%
-  ggplot() +
-  geom_boxplot(aes(x = blue_b, y = gdp_MIO_PPS_EU27_2020))
+View(export_data)
 
-
-
-data_try %>%
-  ggplot(aes(x = hrs_T, y = le_T)) +
-  geom_point() +
-  facet_wrap(~region) +
-  theme_bw()
-
-
-
-
-
-
-
-
-ggplot(data = data_try) +
-  geom_sf(aes(fill = hrs_T)) +
-  coord_sf(
-    xlim = c(-26, 45), ylim = c(30, 73),
-    expand = FALSE
-  )
+write.table(
+  x = export_data,
+  file = "data/nuts2_data.csv",
+  sep = ",",
+  row.names = FALSE
+)
