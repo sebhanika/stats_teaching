@@ -214,7 +214,7 @@ unemp <- dat_eurostat[["lfst_r_lfu3rt"]] %>%
     age == "Y20-64",
     sex == "T"
   ) %>%
-  rename(unemp_pc = values)
+  rename(unemp_rate = values)
 
 
 # hours worked
@@ -293,7 +293,8 @@ data_try <- nuts2 %>%
   left_join(select(le, c(geo, le_T, le_gap)), by = "geo") %>%
   left_join(select(emp, c(geo, industry_jobs, low_skill_jobs)), by = "geo") %>%
   left_join(select(hours_wrk, c(geo, hrs_T, hrs_gap)), by = "geo") %>%
-  left_join(select(mig, c(geo, mig_rate)), by = "geo")
+  left_join(select(mig, c(geo, mig_rate)), by = "geo") %>%
+  left_join(select(unemp, c(geo, unemp_rate)), by = "geo")
 
 # clean workspace
 rm(
