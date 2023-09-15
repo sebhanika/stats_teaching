@@ -10,60 +10,46 @@ This repository contains teaching materials associated with my teaching of quant
 
 ## Contents
 
--   Datasets
+-   Dataset
 -   Exercises and Labs
 -   Shiny App
 -   Jamovi Explained
 -   Usefull links and websites
 
-## Datasets
+## Dataset
 
 The idea is to construct a big dataset from EUROSTAT on the NUTS2 level. This allows for enough different variables and different research questions to be used. It is also very easy to access using the 'eurostat' package in R.
 
-Alternative options are below:
 
--   Historical census data from the US
--   Life expectency (and other data) per US county
--   EU-SILC public use microdata files
--   European Social Survey
-
-### Eurostata variables
+### Eurostat variables
 
 -   Population
 
     -   Population by age and sex
-
-    -   Population growth
-
-    -   One Age Dependncy ratio
-
+    -   Yearly population growth, 
+    -   Population growth between each year and start year
+    -   One Age Dependency ratio
     -   Median age of populations
+    -   Fertility rate?
+    -   Death rate
+    -   Migration
 
 -   Economy
 
     -   GDP
-
     -   GDP per capita (calculatied)
 
-    -   R&D expenditure
-
 -   Health
-
-    -   Hospital beds
 
     -   Life expectancy
 
 -   Labor market
 
     -   Unemployment rate
-
     -   hours worker
-
     -   Employment numbers per sector
-
-    -   employment growth (calculated)
-
-    -   emplyment in High tech sectors
+    -   Employment growth (calculated)
+    -   Employment in High tech sectors
 
 ## Shiny App ideas
 
