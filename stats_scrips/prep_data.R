@@ -2,7 +2,7 @@
 ##
 ## Script name: Prep_data
 ##
-## Topic:
+## Topic: Preparing data for shiny app
 ##
 ## Author: Sebastian Hanika
 ##
@@ -11,7 +11,7 @@
 ## ---------------------------
 ##
 ## Notes:
-##
+## This script prepares the dataset for the shiny app
 ##
 ## ---------------------------
 
@@ -25,71 +25,28 @@ library(eurostat)
 library(purrr)
 library(downloader)
 
-`%!in%` <- Negate(`%in%`) # function needed for later
 
-# geodata -----------------------------------------------------------------
-
-# regions
-# downloaded from https://unstats.un.org/unsd/methodology/m49/overview/
-
-# regions by UN geo scheme
-regions <- read.csv(
-  file = "data/UNSD — Methodology.csv",
-  header = TRUE, sep = ";"
-) %>%
-  janitor::clean_names() %>%
-  select(c(sub_region_name, country_or_area, iso_alpha2_code)) %>%
-  mutate(iso_alpha2_code = case_when(
-    iso_alpha2_code == "GR" ~ "EL",
-    iso_alpha2_code == "GB" ~ "UK",
-    TRUE ~ iso_alpha2_code
-  ))
-
-
-# bluebanaa
-
-blue_banana <- read.csv(file = "data/blue_banana.csv") %>%
-  janitor::clean_names() %>%
-  mutate(blue_banana = 1) %>%
-  select(c(nuts_id, blue_banana))
-
+# Download data -----------------------------------------------------------
 
 # nut2 geodata
 nuts2 <- eurostat_geodata_60_2016 %>%
   janitor::clean_names() %>%
   filter(levl_code == 2) %>%
   subset(!grepl("^FRY|^FR$", nuts_id)) %>% # Exclude Oversee territories
-  select(c(cntr_code, name_latn, geo, geometry)) %>%
-  left_join(regions, by = c("cntr_code" = "iso_alpha2_code")) %>%
-  rename(
-    nuts_name = name_latn,
-    region = sub_region_name,
-    country = country_or_area
-  ) %>%
-  relocate(cntr_code, .before = region) %>%
-  relocate(country, .before = cntr_code) %>%
-  left_join(blue_banana, by = c("geo" = "nuts_id")) %>%
-  mutate(blue_banana = ifelse(is.na(blue_banana), 0, 1))
+  select(c(cntr_code, name_latn, geo, geometry))
 
-
-ggplot(data = nuts2) +
-  geom_sf(aes(fill = blue_banana)) +
-  coord_sf(
-    xlim = c(-26, 45), ylim = c(30, 73),
-    expand = FALSE
-  )
-
-
-
-
-# Download data -----------------------------------------------------------
 
 # names of datasets
 names_eurostat <- c(
-  "demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp",
-  "edat_lfse_04", "lfst_r_lfu3rt",
-  "lfst_r_lfe2ehour", "lfst_r_lfe2en2",
-  "demo_r_mlifexp", "tgs00099"
+  "demo_r_d2jan", # population data
+  "demo_r_pjanind2", # population indicators
+  "nama_10r_2gdp", # gdp data
+  "edat_lfse_04", # education
+  "lfst_r_lfu3rt", # unemployment
+  "lfst_r_lfe2ehour", # hours worked
+  "lfst_r_lfe2en2", # employment by sector
+  "demo_r_mlifexp", # life expectancy
+  "tgs00099" # migration
 )
 
 # Define a function to download Eurostat data
@@ -123,7 +80,6 @@ dat_eurostat <- names_eurostat %>% map(readRDS)
 names(dat_eurostat) <- gsub("data/|\\.rds", "", names_eurostat)
 
 
-
 # Long format  --------------
 
 # Function to add the new column to each dataframe
@@ -146,6 +102,25 @@ saveRDS(combined_df, file = "data/combined.rds")
 # reload combined df in long format
 dat_long <- readRDS(file = "data/combined.rds")
 
+
+
+# dat_cleaning new --------------
+
+x <- combined_df %>%
+  filter(time %in% c(2012:2022), data_name == "demo_r_d2jan") %>%
+  select(-c(indic_de, isced11, nace_r2))
+
+
+
+x %>%
+  summarize(across(everything(), ~ sum(is.na(.x))))
+
+
+x$geo[which(is.na(x$values))]
+
+frx <- x %>% filter(geo == "FRX")
+
+unique(x$geo)
 
 # data cleaning -----------------------------------------------------------
 
@@ -280,7 +255,6 @@ mig <- dat_eurostat[["tgs00099"]] %>%
   ) %>%
   rename(mig_rate = values) %>%
   mutate(mig_rate = mig_rate * 1000)
-
 
 
 # combine data and calcualte relevant new data
