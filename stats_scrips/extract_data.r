@@ -342,3 +342,44 @@ write.table(
     sep = ",",
     row.names = FALSE
 )
+
+
+
+
+test_raw <- read.csv(file = "data/nuts2_data.csv")
+
+
+dat <- test_raw %>%
+    mutate(gdp_cap = (gdp * 1000000 / pop_2019))
+
+
+dat %>% ggplot(aes(x = gdp_cap)) +
+    geom_density()
+
+
+dat %>% ggplot(aes(x = log(gdp_cap))) +
+    geom_density()
+
+
+
+dat %>% ggplot(aes(
+    x = gdp_cap, y = le_T,
+    color = region, size = (gdp)
+)) +
+    geom_point()
+
+
+x <- lm(
+    data = dat,
+    formula = le_T ~ log(gdp_cap) + region
+)
+summary(x)
+
+
+
+dat %>%
+    ggplot(aes(x = median_age, y = (gdp_cap), color = region)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    facet_wrap(~region) +
+    theme_bw()
