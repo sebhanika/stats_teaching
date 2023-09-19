@@ -97,30 +97,27 @@ df_list <- lapply(names(dat_eurostat), function(df_name) {
 combined_df <- do.call(dplyr::bind_rows, df_list)
 
 # save df
-saveRDS(combined_df, file = "data/combined.rds")
+saveRDS(combined_df, file = "data/comb/combined.rds")
 
 # reload combined df in long format
-dat_long <- readRDS(file = "data/combined.rds")
+dat_long <- readRDS(file = "data/comb/combined.rds")
 
 
 
 # dat_cleaning new --------------
 
-x <- combined_df %>%
-  filter(time %in% c(2012:2022), data_name == "demo_r_d2jan") %>%
+x <- dat_long %>%
+  filter(
+    time %in% c(2012:2022),
+    data_name == "demo_r_d2jan", geo %in% unique(nuts2$geo)
+  ) %>%
   select(-c(indic_de, isced11, nace_r2))
 
 
-
-x %>%
-  summarize(across(everything(), ~ sum(is.na(.x))))
+unique(x$age)
 
 
-x$geo[which(is.na(x$values))]
 
-frx <- x %>% filter(geo == "FRX")
-
-unique(x$geo)
 
 # data cleaning -----------------------------------------------------------
 
