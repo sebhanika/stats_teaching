@@ -6,7 +6,7 @@ editor: visual
 
 # Project description
 
-This repository contains teaching materials associated with my teaching of quantitaive method courses at Lund University. It is mostly datasets, different exercises and at least one shiny app that is used for interactive teaching of basic stats concepts.
+This repository contains teaching materials associated with my teaching of quantitative method courses at Lund University. It is mostly datasets, different exercises and at least one shiny app that is used for interactive teaching of basic stats concepts.
 
 ## Contents
 
@@ -14,11 +14,11 @@ This repository contains teaching materials associated with my teaching of quant
 -   Exercises and Labs
 -   Shiny App
 -   Jamovi Explained
--   Usefull links and websites
+-   Useful links and websites
 
 ## Dataset
 
-The idea is to construct a big dataset from EUROSTAT on the NUTS2 level. This allows for enough different variables and different research questions to be used. It is also very easy to access using the 'eurostat' package in R.
+The idea is to construct a big dataset from EUROSTAT on the NUTS2 level. This allows for enough different variables and different research questions to be used. It is also very easy to access using the 'Eurostat' package in R.
 
 
 ### Eurostat variables
@@ -37,7 +37,7 @@ The idea is to construct a big dataset from EUROSTAT on the NUTS2 level. This al
 -   Economy
 
     -   GDP
-    -   GDP per capita (calculatied)
+    -   GDP per capita (calculated)
 
 -   Health
 
@@ -57,7 +57,7 @@ The app should focus in teaching basic statistical concepts through mostly visua
 
 -   Effect of sample size
 -   Visualizing a bar plot
--   Measures of central tendancy
+-   Measures of central tendency
     -   Effect of outliers on the mean
 -   Measure of spread
     -   Stepwise calculation of the standard deviation
