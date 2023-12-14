@@ -17,10 +17,10 @@ library(giscoR)
 # geodata -----------------------------------------------------------------
 
 # nut2 geodata
-nuts2 <-
+nuts2_v1 <-
     get_eurostat_geospatial(
         output_class = "sf",
-        resolution = "20",
+        resolution = "10",
         nuts_level = "2",
         crs = 3857,
         year = "2021",
@@ -50,27 +50,24 @@ nuts2 <-
     relocate(country, .before = cntr_code) %>%
     mutate(area = as.numeric(st_area(geometry) / 1000000)) # calc area
 
-
-
+# get coastal lines
 coast <- gisco_get_countries(
     spatialtype = "COASTL",
-    epsg = "3857", resolution = "20"
+    epsg = "3857",
+    resolution = "20"
 )
 
-
-x <- st_intersection(nuts2, coast) %>%
+# calc intersection
+coasts_nuts2 <- st_intersection(nuts2_v1, coast) %>%
     as_tibble() %>%
     select(c(nuts2_code)) %>%
     mutate(coast = 1) %>%
     distinct()
 
-nuts2_fin <- nuts2 %>%
-    left_join(x, by = "nuts2_code") %>%
-    mutate(coast = ifelse(is.na(coast), 0, TRUE))
-
-
-nuts2_fin %>% ggplot() +
-    geom_sf(aes(fill = coast))
+# Join and create landlocked varaibles
+nuts2 <- nuts2_v1 %>%
+    left_join(coasts_nuts2, by = "nuts2_code") %>%
+    mutate(landlocked = ifelse(is.na(coast), 0, TRUE))
 
 
 # Download data -----------------------------------------------------------
@@ -384,3 +381,39 @@ dat %>%
     geom_smooth(method = "lm") +
     facet_wrap(~region) +
     theme_bw()
+
+
+
+
+
+
+
+
+
+
+
+# checking map
+
+
+
+library(leaflet)
+
+lines_leaflef <- coast %>% st_transform(4326)
+
+dat_leaflet <- nuts2 %>% st_transform(4326)
+
+# create leaflet object
+leaflet() %>%
+    addPolylines(
+        data = lines_leaflef, stroke = TRUE,
+        weight = 0.75,
+        color = "#05e205"
+    ) %>%
+    addPolygons(
+        data = dat_leaflet,
+        weight = 0.1,
+        color = "#d15a5a",
+        smoothFactor = 0.3,
+        opacity = 0.9,
+        fillColor = dat_leaflet$coast
+    )
