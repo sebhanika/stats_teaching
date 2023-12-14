@@ -9,11 +9,6 @@
 ## Date Created: 2023-04-19
 ##
 ## ---------------------------
-##
-## Notes:
-## This script prepares the dataset for the shiny app
-##
-## ---------------------------
 
 # Library and Settings --------------
 ## /* cSpell:disable */
@@ -33,7 +28,9 @@ nuts2 <- eurostat_geodata_60_2016 %>%
   janitor::clean_names() %>%
   filter(levl_code == 2) %>%
   subset(!grepl("^FRY|^FR$", nuts_id)) %>% # Exclude Oversee territories
-  select(c(cntr_code, name_latn, geo, geometry))
+  select(c(cntr_code, name_latn, geo, geometry)) %>%
+  mutate(area = as.numeric(st_area(geometry) / 1000000)) # calc area
+
 
 
 # names of datasets
@@ -106,15 +103,45 @@ dat_long <- readRDS(file = "data/comb/combined.rds")
 
 # dat_cleaning new --------------
 
-x <- dat_long %>%
+
+pop_tot <- dat_long %>%
   filter(
-    time %in% c(2012:2022),
-    data_name == "demo_r_d2jan", geo %in% unique(nuts2$geo)
+    time %in% c(2021),
+    data_name == "demo_r_d2jan",
+    geo %in% unique(nuts2$geo),
+    sex == "T",
+    age == "TOTAL"
   ) %>%
-  select(-c(indic_de, isced11, nace_r2))
+  select(-c(indic_de, isced11, nace_r2, unit))
 
 
-unique(x$age)
+
+pop_dens <- nuts2 %>%
+  left_join(pop_tot, by = "geo") %>%
+  mutate(dens = values / area)
+
+
+plot(density(nuts2$area))
+
+
+
+
+
+
+nuts3 <- eurostat_geodata_60_2016 %>%
+  janitor::clean_names() %>%
+  filter(levl_code == 3) %>%
+  subset(!grepl("^FRY|^FR$", nuts_id)) %>% # Exclude Oversee territories
+  select(c(cntr_code, name_latn, geo, geometry)) %>%
+  mutate(area = as.numeric(st_area(geometry) / 1000000)) # calc area
+
+
+
+
+
+
+
+
 
 
 
