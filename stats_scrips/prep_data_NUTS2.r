@@ -10,48 +10,73 @@ library(geojsonsf)
 library(sf)
 library(eurostat)
 library(countrycode)
+library(giscoR)
 
 `%!in%` <- Negate(`%in%`) # function needed for later
 
 # geodata -----------------------------------------------------------------
 
-
 # nut2 geodata
-nuts2 <- eurostat_geodata_60_2016 %>%
+nuts2 <-
+    get_eurostat_geospatial(
+        output_class = "sf",
+        resolution = "20",
+        nuts_level = "2",
+        crs = 3857,
+        year = "2021",
+        make_valid = TRUE
+    ) %>%
     janitor::clean_names() %>%
-    filter(levl_code == 2) %>%
-    subset(!grepl("^FRY|^FR$", nuts_id))
-
-
-
-
-
-# old code
-# Exclude Oversee territories
-select(c(cntr_code, name_latn, geo, geometry)) %>%
-    left_join(regions, by = c("cntr_code" = "iso_alpha2_code")) %>%
+    filter(!grepl("^FRY|^FR$", nuts_id)) %>%
+    # Create regions varibable
+    mutate(region = countrycode(
+        sourcevar = cntr_code,
+        origin = "eurostat",
+        destination = "un.regionsub.name"
+    )) %>%
+    # Create country name variable
+    mutate(country = countrycode(
+        sourcevar = cntr_code,
+        origin = "eurostat",
+        destination = "country.name"
+    )) %>%
+    # cleaning and ordering
+    select(c(cntr_code, name_latn, geo, geometry, region, country)) %>%
     rename(
-        nuts_name = name_latn,
-        region = sub_region_name,
-        country = country_or_area
+        nuts2_name = name_latn,
+        nuts2_code = geo
     ) %>%
     relocate(cntr_code, .before = region) %>%
-    relocate(country, .before = cntr_code)
-
-ggplot(data = nuts2) +
-    geom_sf(aes(fill = blue_banana)) +
-    coord_sf(
-        xlim = c(-26, 45), ylim = c(30, 73),
-        expand = FALSE
-    )
+    relocate(country, .before = cntr_code) %>%
+    mutate(area = as.numeric(st_area(geometry) / 1000000)) # calc area
 
 
+
+coast <- gisco_get_countries(
+    spatialtype = "COASTL",
+    epsg = "3857", resolution = "20"
+)
+
+
+x <- st_intersection(nuts2, coast) %>%
+    as_tibble() %>%
+    select(c(nuts2_code)) %>%
+    mutate(coast = 1) %>%
+    distinct()
+
+nuts2_fin <- nuts2 %>%
+    left_join(x, by = "nuts2_code") %>%
+    mutate(coast = ifelse(is.na(coast), 0, TRUE))
+
+
+nuts2_fin %>% ggplot() +
+    geom_sf(aes(fill = coast))
 
 
 # Download data -----------------------------------------------------------
 
 # names of datasets
-names_eurostat <- c(
+names_eurostat() <- c(
     "demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp",
     "edat_lfse_04", "lfst_r_lfu3rt",
     "lfst_r_lfe2ehour", "lfst_r_lfe2en2",
