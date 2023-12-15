@@ -20,7 +20,7 @@ library(giscoR)
 nuts2_v1 <-
     get_eurostat_geospatial(
         output_class = "sf",
-        resolution = "10",
+        resolution = "03",
         nuts_level = "2",
         crs = 3857,
         year = "2021",
@@ -51,88 +51,67 @@ nuts2_v1 <-
     mutate(area = as.numeric(st_area(geometry) / 1000000)) # calc area
 
 # get coastal lines
-coast <- gisco_get_countries(
+coast_lines <- gisco_get_countries(
     spatialtype = "COASTL",
     epsg = "3857",
-    resolution = "20"
+    resolution = "03"
 )
 
-# calc intersection
-coasts_nuts2 <- st_intersection(nuts2_v1, coast) %>%
+coasts_nuts2 <- st_intersection(nuts2_v1, coast_lines) %>%
     as_tibble() %>%
     select(c(nuts2_code)) %>%
-    mutate(coast = 1) %>%
+    mutate(landlocked = 1) %>%
     distinct()
 
 # Join and create landlocked varaibles
 nuts2 <- nuts2_v1 %>%
     left_join(coasts_nuts2, by = "nuts2_code") %>%
-    mutate(landlocked = ifelse(is.na(coast), 0, TRUE))
+    mutate(landlocked = ifelse(is.na(landlocked), 0, TRUE))
 
+rm(coast_lines, nuts2_v1, coasts_nuts2)
 
 # Download data -----------------------------------------------------------
 
 # names of datasets
-names_eurostat() <- c(
-    "demo_r_d2jan", "demo_r_pjanind2", "nama_10r_2gdp",
-    "edat_lfse_04", "lfst_r_lfu3rt",
-    "lfst_r_lfe2ehour", "lfst_r_lfe2en2",
-    "demo_r_mlifexp", "tgs00099"
+names_eurostat <- c(
+    "demo_r_d2jan", # population data
+    "demo_r_pjanind2", # pop indicators, median age
+    "nama_10r_2gdp", # gdp data
+    "edat_lfse_04", # education data
+    "lfst_r_lfu3rt", # unemployment
+    "lfst_r_lfe2ehour", # hours worked
+    "lfst_r_lfe2en2", # sectoral employment
+    "demo_r_mlifexp", # life expectancy
+    "tgs00099" # migration data
 )
 
 # Define a function to download Eurostat data
 download_eurostat <- function(dataset_name) {
     data <- get_eurostat(dataset_name, time_format = "num")
-
     return(data)
 }
 
 # Load each dataset using lapply
 dat_eurostat <- lapply(names_eurostat, download_eurostat)
-
 names(dat_eurostat) <- names_eurostat
 
 
 # Temp dave data ----------------------------------------------------------
 
 # here I temporarly save and reload the data so it becomes
-# quicker to access between sessions will be deleted later
+# easier to work with.
 
 lapply(names(dat_eurostat), function(df) {
     df_name <- file.path("data", paste0(df, ".rds"))
     saveRDS(dat_eurostat[[df]], file = df_name)
 })
 
-# load data
+# reload data
 names_eurostat <- list.files(path = "data", pattern = ".rds", full.names = TRUE)
 
 dat_eurostat <- names_eurostat %>% map(readRDS)
 
 names(dat_eurostat) <- gsub("data/|\\.rds", "", names_eurostat)
-
-
-
-# Long format  --------------
-
-# Function to add the new column to each dataframe
-add_dataframe_name_column <- function(df, df_name) {
-    df$data_name <- df_name
-    return(df)
-}
-
-# Using lapply to add the new column to each dataframe
-df_list <- lapply(names(dat_eurostat), function(df_name) {
-    add_dataframe_name_column(dat_eurostat[[df_name]], df_name)
-})
-
-# combine data
-combined_df <- do.call(dplyr::bind_rows, df_list)
-
-# save df
-saveRDS(combined_df, file = "data/combined.rds")
-
-# reload combined df in long format
-dat_long <- readRDS(file = "data/combined.rds")
 
 
 # data cleaning -----------------------------------------------------------
@@ -398,7 +377,7 @@ dat %>%
 
 library(leaflet)
 
-lines_leaflef <- coast %>% st_transform(4326)
+lines_leaflef <- coast_lines %>% st_transform(4326)
 
 dat_leaflet <- nuts2 %>% st_transform(4326)
 
@@ -415,5 +394,5 @@ leaflet() %>%
         color = "#d15a5a",
         smoothFactor = 0.3,
         opacity = 0.9,
-        fillColor = dat_leaflet$coast
+        fillColor = dat_leaflet$landlocked
     )
