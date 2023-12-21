@@ -16,7 +16,6 @@ library(giscoR)
 
 # geodata -----------------------------------------------------------------
 
-# nut2 geodata
 nuts2_v1 <-
     get_eurostat_geospatial(
         output_class = "sf",
@@ -28,19 +27,16 @@ nuts2_v1 <-
     ) %>%
     janitor::clean_names() %>%
     filter(!grepl("^FRY|^FR$", nuts_id)) %>%
-    # Create regions varibable
     mutate(region = countrycode(
         sourcevar = cntr_code,
         origin = "eurostat",
         destination = "un.regionsub.name"
     )) %>%
-    # Create country name variable
     mutate(country = countrycode(
         sourcevar = cntr_code,
         origin = "eurostat",
         destination = "country.name"
     )) %>%
-    # cleaning and ordering
     select(c(cntr_code, name_latn, geo, geometry, region, country)) %>%
     rename(
         nuts2_name = name_latn,
@@ -48,7 +44,7 @@ nuts2_v1 <-
     ) %>%
     relocate(cntr_code, .before = region) %>%
     relocate(country, .before = cntr_code) %>%
-    mutate(area = as.numeric(st_area(geometry) / 1000000)) # calc area
+    mutate(area = as.numeric(st_area(geometry) / 1000000))
 
 # get coastal lines
 coast_lines <- gisco_get_countries(
@@ -61,7 +57,7 @@ coasts_nuts2 <- st_intersection(nuts2_v1, coast_lines) %>%
     as_tibble() %>%
     select(c(nuts2_code)) %>%
     mutate(landlocked = 1) %>%
-    distinct()
+    distinct() # st_interesction creates duplicates
 
 # Join and create landlocked varaibles
 nuts2 <- nuts2_v1 %>%
@@ -114,142 +110,128 @@ dat_eurostat <- names_eurostat %>% map(readRDS)
 names(dat_eurostat) <- gsub("data/|\\.rds", "", names_eurostat)
 
 
+dat_eurostat_filt <- lapply(dat_eurostat, function(x) {
+    x %>%
+        filter(
+            time == 2019,
+            nchar(geo) == 4
+        )
+})
+
+
+
+
+
+
+
 # data cleaning -----------------------------------------------------------
 
-### Regio data
-pop_grw <- dat_eurostat[["demo_r_d2jan"]] %>%
+pop <- dat_eurostat_filt[["demo_r_d2jan"]] %>%
     filter(
         sex == "T",
-        nchar(geo) == 4,
-        age == "TOTAL",
-        time %in% c(2019, 2014)
+        age == "TOTAL"
     ) %>%
-    pivot_wider(
-        values_from = values,
-        names_from = time,
-        names_prefix = "pop_"
-    ) %>%
-    mutate(popgrw_2014_2019 = ((pop_2019 - pop_2014) / pop_2014) * 100)
+    rename(pop = values) %>%
+    select(-c(unit, sex, age, time))
 
+pop_ind <- dat_eurostat_filt[["demo_r_pjanind2"]] %>%
+    filter(indic_de == "MEDAGEPOP") %>%
+    rename(median_age = values) %>%
+    select(-c(unit, time, indic_de))
 
-pop_ind <- dat_eurostat[["demo_r_pjanind2"]] %>%
+gdp <- dat_eurostat_filt[["nama_10r_2gdp"]] %>%
+    filter(unit == "MIO_PPS_EU27_2020") %>% # PPS, EU27 from 2020
+    mutate(gdp = values * 1000000) %>%
+    select(-c(unit, time, values))
+
+edu <- dat_eurostat_filt[["edat_lfse_04"]] %>%
     filter(
-        indic_de == "MEDAGEPOP",
-        nchar(geo) == 4,
-        time == 2019
-    ) %>%
-    rename(median_age = values)
-
-
-gdp <- dat_eurostat[["nama_10r_2gdp"]] %>%
-    filter(
-        time == 2019,
-        nchar(geo) == 4,
-        unit == "MIO_PPS_EU27_2020" # PPS, EU27 from 2020, per inhabitant
-    ) %>%
-    pivot_wider(
-        values_from = values,
-        names_from = unit,
-        names_prefix = "gdp_"
-    ) %>%
-    rename(gdp = gdp_MIO_PPS_EU27_2020)
-
-
-
-# education
-edu <- dat_eurostat[["edat_lfse_04"]] %>%
-    filter(
-        time == 2019,
         age == "Y25-64",
-        nchar(geo) == 4,
         isced11 == "ED5-8" # tertiary
     ) %>%
-    mutate(isced11 = "tertiary") %>%
+    mutate(isced11 = "higher_edu") %>%
     pivot_wider(
         names_from = c(isced11, sex),
         values_from = values,
-        names_prefix = "edu_"
-    )
+        names_prefix = "sh_"
+    ) %>%
+    select(-c(unit, age, time))
 
-
-# unemp
-unemp <- dat_eurostat[["lfst_r_lfu3rt"]] %>%
+unemp <- dat_eurostat_filt[["lfst_r_lfu3rt"]] %>%
     filter(
         isced11 == "TOTAL",
-        nchar(geo) == 4,
-        time == 2019,
         age == "Y20-64",
         sex == "T"
     ) %>%
-    rename(unemp_rate = values)
+    rename(sh_unemp = values) %>%
+    select(-c(isced11, age, sex, time, unit))
 
-
-# hours worked
-hours_wrk <- dat_eurostat[["lfst_r_lfe2ehour"]] %>%
-    filter(
-        time == 2019,
-        nchar(geo) == 4,
-        age == "Y25-64"
-    ) %>%
+hours_wrk <- dat_eurostat_filt[["lfst_r_lfe2ehour"]] %>%
+    filter(age == "Y25-64") %>%
     pivot_wider(
         names_from = sex, names_prefix = "hrs_",
         values_from = values
     ) %>%
-    mutate(hrs_gap = hrs_M - hrs_F)
+    mutate(hrs_gap = hrs_M - hrs_F) %>%
+    select(-c(unit, time, hrs_F, hrs_M, age))
 
-
-emp <- dat_eurostat[["lfst_r_lfe2en2"]] %>%
+emp_type <- dat_eurostat_filt[["lfst_r_lfe2en2"]] %>%
     filter(
-        time == 2019,
         age == "Y25-64",
-        nchar(geo) == 4,
         sex == "T",
         nace_r2 %in% c(
+            "TOTAL",
             "B-E", # Industry
             "G-I", # Retail and low-skill services
             "M_N" # Knowledge industry
         )
     ) %>%
     mutate(nace_r2 = case_when(
-        nace_r2 == "B-E" ~ "industry_jobs",
-        nace_r2 == "G-I" ~ "low_skill_jobs",
-        nace_r2 == "M_N" ~ "Knowledge_jobs"
+        nace_r2 == "TOTAL" ~ "total",
+        nace_r2 == "B-E" ~ "industry",
+        nace_r2 == "G-I" ~ "trade_services",
+        nace_r2 == "M_N" ~ "knowledge"
     )) %>%
     pivot_wider(
         names_from = nace_r2,
-        values_from = values
+        values_from = values,
     ) %>%
     mutate(
-        industry_jobs = industry_jobs * 1000,
-        low_skill_jobs = low_skill_jobs * 1000
-    )
-
-
-# life exptectancy data
-le <- dat_eurostat[["demo_r_mlifexp"]] %>%
-    filter(
-        age == "Y1",
-        nchar(geo) == 4,
-        time == 2019
+        sh_industry = industry / total,
+        sh_trade_services = trade_services / total,
+        sh_knowledge = knowledge / total
     ) %>%
+    select(c(
+        geo, sh_trade_services,
+        sh_industry, sh_knowledge, total
+    ))
+
+le <- dat_eurostat_filt[["demo_r_mlifexp"]] %>%
+    filter(age == "Y1") %>%
     pivot_wider(
-        names_from = sex, names_prefix = "le_",
+        names_from = sex,
+        names_prefix = "le_",
         values_from = values
     ) %>%
-    mutate(le_gap = le_F - le_M)
+    mutate(le_gap = le_F - le_M) %>%
+    select(c(geo, le_T, le_gap))
 
-
-# migration
-mig <- dat_eurostat[["tgs00099"]] %>%
+# Crude rates, per 1000 persons
+pop_change <- dat_eurostat_filt[["tgs00099"]] %>%
     filter(
-        time == 2019,
-        indic_de == "CNMIGRATRT"
+        indic_de %in% c("CNMIGRATRT", "GROWRT")
     ) %>%
-    rename(mig_rate = values) %>%
-    mutate(mig_rate = mig_rate * 1000)
+    pivot_wider(
+        names_from = indic_de,
+        values_from = values
+    ) %>%
+    rename(
+        mig_rate = CNMIGRATRT, # per 1000 persons!
+        grw_rate = GROWRT
+    ) %>%
+    select(-c(time))
 
 
-# combine data and calcualte relevant new data
 
 data_try <- nuts2 %>%
     # as.data.frame() %>%
