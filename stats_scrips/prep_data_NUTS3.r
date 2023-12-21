@@ -3,46 +3,59 @@
 # Purpose: Script Purpose
 # /* cSpell:disable */
 
-
 # Library and Settings --------------
-## /* cSpell:disable */
 
 library(tidyverse)
-library(geojsonsf)
 library(sf)
 library(eurostat)
-library(purrr)
-library(downloader)
 library(countrycode)
 library(ggspatial)
 library(ggthemes)
 
-
 # Download data -----------------------------------------------------------
 
-# nut3 geodata
-nuts3 <- eurostat_geodata_60_2016 %>%
+
+
+nuts3_v1 <-
+    get_eurostat_geospatial(
+        output_class = "sf",
+        resolution = "20",
+        nuts_level = "3",
+        crs = 3857,
+        year = "2021",
+        make_valid = TRUE
+    ) %>%
     janitor::clean_names() %>%
-    filter(levl_code == 3) %>%
-    filter(cntr_code %in% c("FI", "DK", "SE", "LT", "LV", "EE", "PL")) %>%
-    select(c(urbn_type, cntr_code, name_latn, geo, geometry)) %>%
-    mutate(cntr_name = countrycode(cntr_code,
+    filter(!grepl("^FRY|^FR$", nuts_id)) %>% # rm colonies
+    filter(coast_type %in% c(1, 2)) %>%
+    select(c(
+        cntr_code, name_latn, geo,
+        geometry, urbn_type, coast_type
+    )) %>%
+    mutate(region = countrycode(
+        sourcevar = cntr_code,
+        origin = "eurostat",
+        destination = "un.regionsub.name"
+    )) %>%
+    mutate(country = countrycode(
+        sourcevar = cntr_code,
         origin = "eurostat",
         destination = "country.name"
     )) %>%
-    mutate(area = as.numeric(st_area(geometry) / 1000000)) %>% # calc area
-    mutate(urbn_type = case_when(
-        urbn_type == 1 ~ "urban",
-        urbn_type == 2 ~ "intermediate",
-        urbn_type == 3 ~ "rural"
-    )) %>%
-    mutate(region = if_else(condition = cntr_code %in% c("FI", "DK", "SE"),
-        "North", "East"
+    rename(nuts2_name = name_latn) %>%
+    relocate(cntr_code, .before = region) %>%
+    relocate(country, .before = cntr_code) %>%
+    mutate(area = as.numeric(st_area(geometry) / 1000000))
+
+
+try1 <- nuts3_v1 %>%
+    filter(country %in% c(
+        "Germany", "Sweden", "Denmark",
+        "Finland", "Estonia", "Latvia", "Lithuania", "Poland"
     ))
 
 
-# names of datasets
-names_eurostat <- c(
+names_eurostat() <- c(
     "demo_r_pjanaggr3", # population data
     "demo_r_gind3", # pop change
     "demo_r_pjanind3", # population indicators
@@ -52,16 +65,14 @@ names_eurostat <- c(
     "demo_r_find3" # fertility rate
 )
 
-# Define a function to download Eurostat data
+# Function Eurostat data
 download_eurostat <- function(dataset_name) {
     data <- get_eurostat(dataset_name, time_format = "num")
 
     return(data)
 }
 
-# Load each dataset using lapply
 dat_eurostat <- lapply(names_eurostat, download_eurostat)
-
 names(dat_eurostat) <- names_eurostat
 
 
@@ -83,6 +94,9 @@ dat_eurostat <- names_eurostat %>% map(readRDS)
 names(dat_eurostat) <- gsub("data/|\\.rds", "", names_eurostat)
 
 
+
+# Data cleaning  --------------
+
 cntries_filt <- "^SE|^FI|^DK|^EE|^LT|^LV|^PL"
 
 df_list <- lapply(dat_eurostat, function(x) {
@@ -95,9 +109,6 @@ df_list <- lapply(dat_eurostat, function(x) {
 })
 
 
-# Data cleaning  --------------
-
-### Regio data
 
 # population
 pop <- df_list[["demo_r_pjanaggr3"]] %>%
