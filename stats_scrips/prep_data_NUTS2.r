@@ -25,7 +25,7 @@ nuts2_v1 <-
         make_valid = TRUE
     ) %>%
     janitor::clean_names() %>%
-    filter(!grepl("^FRY|^FR$", nuts_id)) %>%
+    filter(!grepl("^FRY|^FR$", nuts_id)) %>% # rm colonies
     mutate(region = countrycode(
         sourcevar = cntr_code,
         origin = "eurostat",
@@ -55,16 +55,14 @@ coasts_nuts2 <- st_intersection(nuts2_v1, coast_lines) %>%
     mutate(landlocked = 1) %>%
     distinct() # st_interesction creates duplicates
 
-# Join and create landlocked varaibles
 nuts2 <- nuts2_v1 %>%
     left_join(coasts_nuts2, by = "nuts2_code") %>%
     mutate(landlocked = as.factor(ifelse(is.na(landlocked), 0, TRUE)))
 
 rm(coast_lines, nuts2_v1, coasts_nuts2)
 
-# Download data -----------------------------------------------------------
+# Download Eurostat data  --------------
 
-# names of datasets
 names_eurostat <- c(
     "demo_r_d2jan", # population data
     "demo_r_pjanind2", # pop indicators, median age
@@ -77,37 +75,37 @@ names_eurostat <- c(
     "tgs00099" # migration data
 )
 
-# Define a function to download Eurostat data
+# Function to download Eurostat data
 download_eurostat <- function(dataset_name) {
     data <- get_eurostat(dataset_name, time_format = "num")
     return(data)
 }
 
-# Load each dataset using lapply
+# Load each dataset
 dat_eurostat <- lapply(names_eurostat, download_eurostat)
 names(dat_eurostat) <- names_eurostat
 
 
 # Temp dave data ----------------------------------------------------------
 
-# here I temporarly save and reload the data so it becomes
-# easier to work with.
+# here I temporarly save and reload, will be removed
 
-lapply(names(dat_eurostat), function(df) {
-    df_name <- file.path("data/nuts2", paste0(df, ".rds"))
-    saveRDS(dat_eurostat[[df]], file = df_name)
-})
+# lapply(names(dat_eurostat), function(df) {
+#     df_name <- file.path("data/nuts2", paste0(df, ".rds"))
+#     saveRDS(dat_eurostat[[df]], file = df_name)
+# })
 
-# reload data
-names_eurostat <- list.files(
-    path = "data/nuts2",
-    pattern = ".rds", full.names = TRUE
-)
+# names_eurostat <- list.files(
+#     path = "data/nuts2", pattern = ".rds",
+#     full.names = TRUE
+# )
 
-dat_eurostat <- names_eurostat %>% map(readRDS)
+# dat_eurostat <- names_eurostat %>% map(readRDS)
+# names(dat_eurostat) <- gsub("data/nuts2/|\\.rds", "", names_eurostat)
 
-names(dat_eurostat) <- gsub("data/nuts2/|\\.rds", "", names_eurostat)
+# data cleaning -----------------------------------------------------------
 
+# filter for 2019 and nuts2 only
 dat_eurostat_filt <- lapply(dat_eurostat, function(x) {
     x %>%
         filter(
@@ -115,8 +113,6 @@ dat_eurostat_filt <- lapply(dat_eurostat, function(x) {
             nchar(geo) == 4
         )
 })
-
-# data cleaning -----------------------------------------------------------
 
 pop <- dat_eurostat_filt[["demo_r_d2jan"]] %>%
     filter(
@@ -225,7 +221,7 @@ pop_change <- dat_eurostat_filt[["tgs00099"]] %>%
 
 
 # combine data using Reduce to save space,
-# have create list first
+# create list first
 
 df_clean <- list(pop, pop_ind, gdp, le, emp_type, hours_wrk, pop_change, unemp)
 
@@ -236,8 +232,8 @@ dat_comb <- Reduce(function(x, y) merge(x, y, by = "geo", all.x = TRUE),
 
 rm(df_clean, edu, emp, gdp, hours_wrk, le, mig, pop_grw, pop_ind, unemp)
 
-# Check data --------------
 
+# Check data for NAs --------------
 countries_missing <- dat_comb %>%
     group_by(country) %>%
     summarize(across(
@@ -273,7 +269,8 @@ excl_cntrs <- c(
     "Switzerland", "Serbia"
 )
 
-# Export data as csv
+# Export data --------------
+
 export_data_tbl <- dat_comb %>%
     as_tibble() %>%
     select(-c(geometry)) %>%
