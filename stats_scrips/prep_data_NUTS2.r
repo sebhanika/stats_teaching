@@ -51,12 +51,12 @@ coast_lines <- gisco_get_countries(
 
 coasts_nuts2 <- st_intersection(nuts2_v1, coast_lines) %>%
     as_tibble() %>%
-    select(c(nuts2_code)) %>%
+    select(c(geo)) %>%
     mutate(landlocked = 1) %>%
     distinct() # st_interesction creates duplicates
 
 nuts2 <- nuts2_v1 %>%
-    left_join(coasts_nuts2, by = "nuts2_code") %>%
+    left_join(coasts_nuts2, by = "geo") %>%
     mutate(landlocked = as.factor(ifelse(is.na(landlocked), 0, TRUE)))
 
 rm(coast_lines, nuts2_v1, coasts_nuts2)
@@ -230,7 +230,7 @@ dat_comb <- Reduce(function(x, y) merge(x, y, by = "geo", all.x = TRUE),
     init = nuts2
 )
 
-rm(df_clean, edu, emp, gdp, hours_wrk, le, mig, pop_grw, pop_ind, unemp)
+rm(df_clean, pop, edu, emp_type, gdp, hours_wrk, le, mig, pop_change, pop_ind, unemp)
 
 
 # Check data for NAs --------------
@@ -277,7 +277,7 @@ export_data_tbl <- dat_comb %>%
     filter(country %!in% excl_cntrs)
 
 write.table(
-    x = export_data,
+    x = export_data_tbl,
     file = "data/nuts2/nuts2_data.csv",
     sep = ",",
     row.names = FALSE
