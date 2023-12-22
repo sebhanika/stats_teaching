@@ -230,8 +230,10 @@ dat_comb <- Reduce(function(x, y) merge(x, y, by = "geo", all.x = TRUE),
     init = nuts2
 )
 
-rm(df_clean, pop, edu, emp_type, gdp, hours_wrk, le, mig, pop_change, pop_ind, unemp)
-
+rm(
+    df_clean, pop, edu, emp_type, gdp, hours_wrk,
+    le, mig, pop_change, pop_ind, unemp
+)
 
 # Check data for NAs --------------
 countries_missing <- dat_comb %>%
@@ -270,7 +272,6 @@ excl_cntrs <- c(
 )
 
 # Export data --------------
-
 export_data_tbl <- dat_comb %>%
     as_tibble() %>%
     select(-c(geometry)) %>%
