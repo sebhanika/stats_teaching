@@ -14,61 +14,48 @@ library(ggthemes)
 
 # Download data -----------------------------------------------------------
 
+# these countries are completely included
+# only parts of Germany (Mecklemburg & Schleswig) and
+# Poland (parts of Pomeranian and West Pomeranian) are inlcuded
+baltic_reg <- c("^DEF|^DE80|^PL63|^PL62|^PL42|^SE|^DK|^FI|^EE|^LV|^LT")
 
-
-nuts3_v1 <-
+nuts3_baltic <-
     get_eurostat_geospatial(
         output_class = "sf",
-        resolution = "20",
+        resolution = "03",
         nuts_level = "3",
         crs = 3857,
         year = "2021",
         make_valid = TRUE
     ) %>%
     janitor::clean_names() %>%
-    filter(!grepl("^FRY|^FR$", nuts_id)) %>% # rm colonies
-    filter(coast_type %in% c(1, 2)) %>%
-    select(c(
-        cntr_code, name_latn, geo,
-        geometry, urbn_type, coast_type
-    )) %>%
-    mutate(region = countrycode(
-        sourcevar = cntr_code,
-        origin = "eurostat",
-        destination = "un.regionsub.name"
-    )) %>%
+    filter(grepl(baltic_reg, geo)) %>%
     mutate(country = countrycode(
         sourcevar = cntr_code,
         origin = "eurostat",
         destination = "country.name"
     )) %>%
+    mutate(
+        area = as.numeric(st_area(geometry) / 1000000),
+        coast = ifelse(coast_type == 1, 1, 0)
+    ) %>%
     rename(nuts2_name = name_latn) %>%
-    relocate(cntr_code, .before = region) %>%
-    relocate(country, .before = cntr_code) %>%
-    mutate(area = as.numeric(st_area(geometry) / 1000000))
+    select(c(country, nuts2_name, geo, urbn_type, coast, geometry, area))
 
 
-try1 <- nuts3_v1 %>%
-    filter(country %in% c(
-        "Germany", "Sweden", "Denmark",
-        "Finland", "Estonia", "Latvia", "Lithuania", "Poland"
-    ))
-
-
-names_eurostat() <- c(
+names_eurostat <- c(
     "demo_r_pjanaggr3", # population data
     "demo_r_gind3", # pop change
     "demo_r_pjanind3", # population indicators
     "nama_10r_3gdp", # gdp data
     "nama_10r_3empers", # employment
-    "bd_size_r3", # business demogrphy
+    "pat_ep_rtot", # patent applications
     "demo_r_find3" # fertility rate
 )
 
 # Function Eurostat data
 download_eurostat <- function(dataset_name) {
     data <- get_eurostat(dataset_name, time_format = "num")
-
     return(data)
 }
 
@@ -76,42 +63,47 @@ dat_eurostat <- lapply(names_eurostat, download_eurostat)
 names(dat_eurostat) <- names_eurostat
 
 
+
+dattyr <- get_eurostat("pat_ep_rtot", time_format = "num")
+
+
+
+
+
+
+
 # Temp dave data ----------------------------------------------------------
 
 # here I temporarly save and reload the data so it becomes
 # quicker to access between sessions will be deleted later
 
-lapply(names(dat_eurostat), function(df) {
-    df_name <- file.path("data", paste0(df, ".rds"))
-    saveRDS(dat_eurostat[[df]], file = df_name)
-})
+# lapply(names(dat_eurostat), function(df) {
+#     df_name <- file.path("data/nuts3", paste0(df, ".rds"))
+#     saveRDS(dat_eurostat[[df]], file = df_name)
+# })
 
-# load data
-names_eurostat <- list.files(path = "data", pattern = ".rds", full.names = TRUE)
+# names_eurostat <- list.files(
+#     path = "data/nuts3",
+#     pattern = ".rds",
+#     full.names = TRUE
+# )
 
-dat_eurostat <- names_eurostat %>% map(readRDS)
-
-names(dat_eurostat) <- gsub("data/|\\.rds", "", names_eurostat)
-
+# dat_eurostat <- names_eurostat %>% map(readRDS)
+# names(dat_eurostat) <- gsub("data/|\\.rds", "", names_eurostat)
 
 
 # Data cleaning  --------------
 
-cntries_filt <- "^SE|^FI|^DK|^EE|^LT|^LV|^PL"
-
-df_list <- lapply(dat_eurostat, function(x) {
+dat_eurostat_filt <- lapply(dat_eurostat, function(x) {
     x %>%
-        subset(grepl(cntries_filt, geo)) %>%
         filter(
             time == 2019,
-            nchar(geo) == 5
+            nchar(geo) == 5,
+            grepl(baltic_reg, geo)
         )
 })
 
-
-
-# population
-pop <- df_list[["demo_r_pjanaggr3"]] %>%
+pop <- dat_eurostat_filt[["demo_r_pjanaggr3"]] %>%
     filter(
         sex == "T",
         age == "TOTAL"
@@ -119,63 +111,54 @@ pop <- df_list[["demo_r_pjanaggr3"]] %>%
     rename(pop = values) %>%
     select(c("geo", "pop"))
 
-# death rate
-deaths <- df_list[["demo_r_gind3"]] %>%
-    filter(indic_de == "GDEATHRT") %>%
+deaths <- dat_eurostat_filt[["demo_r_gind3"]] %>%
+    filter(indic_de == "GDEATHRT") %>% # death rate
     rename(death_rate = values) %>%
     select(c(geo, death_rate))
 
-# median age
-pop_ind <- df_list[["demo_r_pjanind3"]] %>%
-    filter(
-        indic_de == "MEDAGEPOP",
-    ) %>%
+pop_ind <- dat_eurostat_filt[["demo_r_pjanind3"]] %>%
+    filter(indic_de == "MEDAGEPOP") %>%
     rename(median_age = values) %>%
     select(c(geo, median_age))
 
-# gdp
-gdp <- df_list[["nama_10r_3gdp"]] %>%
-    filter(
-        unit == "MIO_PPS_EU27_2020" # PPS, EU27 from 2020, per inhabitant
-    ) %>%
-    pivot_wider(
-        values_from = values,
-        names_from = unit,
-        names_prefix = "gdp_"
-    ) %>%
-    rename(gdp = gdp_MIO_PPS_EU27_2020) %>%
-    select(c(geo, gdp))
+gdp <- dat_eurostat_filt[["nama_10r_3gdp"]] %>%
+    filter(unit == "MIO_PPS_EU27_2020") %>% # PPS, EU27 from 2020
+    mutate(gdp = values * 1000000) %>%
+    select(-c(unit, time, values))
 
-# employment
-emp <- df_list[["nama_10r_3empers"]] %>%
+emp_type <- dat_eurostat_filt[["nama_10r_3empers"]] %>%
     filter(
         wstatus == "EMP",
         nace_r2 %in% c(
+            "TOTAL",
             "B-E", # Industry
-            "G-I", # Retail and low-skill services
-            "M_N" # Knowledge industry
+            "G-J", # Retial, GEr
+            "K-N" # knowledge, Germany
         )
     ) %>%
     mutate(nace_r2 = case_when(
-        nace_r2 == "B-E" ~ "industry_jobs",
-        nace_r2 == "G-I" ~ "low_skill_jobs",
-        nace_r2 == "M_N" ~ "Knowledge_jobs"
+        nace_r2 == "TOTAL" ~ "total",
+        nace_r2 == "B-E" ~ "industry",
+        nace_r2 == "G-J" ~ "trade_services",
+        nace_r2 == "K-N" ~ "knowledge"
     )) %>%
     pivot_wider(
         names_from = nace_r2,
-        values_from = values
+        values_from = values,
     ) %>%
     mutate(
-        industry_jobs = industry_jobs * 1000,
-        low_skill_jobs = low_skill_jobs * 1000
+        sh_industry = industry / total,
+        sh_trade_services = trade_services / total,
+        sh_knowledge = knowledge / total
     ) %>%
-    select(c(geo, industry_jobs, low_skill_jobs))
+    select(c(
+        geo, sh_trade_services,
+        sh_industry, sh_knowledge, total
+    ))
 
-
-# small businesses as share of businesses
-small_bus <- df_list[["bd_size_r3"]] %>%
+sh_small_bus <- dat_eurostat_filt[["bd_size_r3"]] %>%
     filter(
-        indic_sb %in% c("V11910"),
+        indic_sb == "V11910",
         sizeclas %in% c("1-9", "TOTAL")
     ) %>%
     pivot_wider(
@@ -186,44 +169,42 @@ small_bus <- df_list[["bd_size_r3"]] %>%
     mutate(sh_small_bus = `size_1-9` / size_TOTAL) %>%
     select(c(geo, sh_small_bus))
 
-
-# small businesses founded
-bus_found <- df_list[["bd_size_r3"]] %>%
+small_bus_found <- dat_eurostat_filt[["bd_size_r3"]] %>%
     filter(
-        indic_sb %in% c("V11920"),
-        sizeclas %in% c("1-9")
+        indic_sb == "V11920",
+        sizeclas == "1-9"
     ) %>%
     rename(small_bus_found = values) %>%
     select(c(geo, small_bus_found))
 
-# fertility rate
-fert <- df_list[["demo_r_find3"]] %>%
+fert <- dat_eurostat_filt[["demo_r_find3"]] %>%
     filter(indic_de == "TOTFERRT") %>%
     rename(fertilty_rate = values) %>%
     select(c(geo, fertilty_rate))
 
-# combine data
-dat_comb <- nuts3 %>%
-    left_join(pop, by = "geo") %>%
-    left_join(deaths, by = "geo") %>%
-    left_join(fert, by = "geo") %>%
-    left_join(pop_ind, by = "geo") %>%
-    left_join(gdp, by = "geo") %>%
-    left_join(emp, by = "geo") %>%
-    left_join(small_bus, by = "geo") %>%
-    left_join(bus_found, by = "geo")
+
+# Combine data --------------
+df_clean <- list(
+    pop, deaths, gdp, pop_ind, emp_type,
+    fert, small_bus_found, sh_small_bus
+)
+
+dat_comb <- Reduce(function(x, y) merge(x, y, by = "geo", all.x = TRUE),
+    df_clean,
+    init = nuts3_baltic
+)
+
+rm(
+    df_clean, pop, deaths, gdp, pop_ind, emp_type,
+    fert, small_bus_found, sh_small_bus
+)
+
 
 # clean data and order
-export_data <- dat_comb %>%
+export_data_tbl <- dat_comb %>%
     as_tibble() %>%
-    select(-c(geometry, cntr_code)) %>%
-    rename(
-        nuts3_code = geo,
-        nuts_name = name_latn,
-        country = cntr_name
-    ) %>%
-    relocate(urbn_type, .after = region)
-
+    select(-c(geometry))
+View(export_data_tbl)
 
 # imp data
 imp_data <- export_data %>%
