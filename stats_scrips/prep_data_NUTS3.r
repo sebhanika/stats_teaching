@@ -49,7 +49,6 @@ names_eurostat <- c(
     "demo_r_pjanind3", # population indicators
     "nama_10r_3gdp", # gdp data
     "nama_10r_3empers", # employment
-    "pat_ep_rtot", # patent applications
     "demo_r_find3" # fertility rate
 )
 
@@ -61,13 +60,6 @@ download_eurostat <- function(dataset_name) {
 
 dat_eurostat <- lapply(names_eurostat, download_eurostat)
 names(dat_eurostat) <- names_eurostat
-
-
-
-dattyr <- get_eurostat("pat_ep_rtot", time_format = "num")
-
-
-
 
 
 
@@ -97,7 +89,7 @@ dattyr <- get_eurostat("pat_ep_rtot", time_format = "num")
 dat_eurostat_filt <- lapply(dat_eurostat, function(x) {
     x %>%
         filter(
-            time == 2019,
+            TIME_PERIOD == 2019,
             nchar(geo) == 5,
             grepl(baltic_reg, geo)
         )
@@ -124,7 +116,7 @@ pop_ind <- dat_eurostat_filt[["demo_r_pjanind3"]] %>%
 gdp <- dat_eurostat_filt[["nama_10r_3gdp"]] %>%
     filter(unit == "MIO_PPS_EU27_2020") %>% # PPS, EU27 from 2020
     mutate(gdp = values * 1000000) %>%
-    select(-c(unit, time, values))
+    select(-c(unit, TIME_PERIOD, values, freq))
 
 emp_type <- dat_eurostat_filt[["nama_10r_3empers"]] %>%
     filter(
@@ -137,7 +129,7 @@ emp_type <- dat_eurostat_filt[["nama_10r_3empers"]] %>%
         )
     ) %>%
     mutate(nace_r2 = case_when(
-        nace_r2 == "TOTAL" ~ "total",
+        nace_r2 == "TOTAL" ~ "total_jobs",
         nace_r2 == "B-E" ~ "industry",
         nace_r2 == "G-J" ~ "trade_services",
         nace_r2 == "K-N" ~ "knowledge"
@@ -147,35 +139,14 @@ emp_type <- dat_eurostat_filt[["nama_10r_3empers"]] %>%
         values_from = values,
     ) %>%
     mutate(
-        sh_industry = industry / total,
-        sh_trade_services = trade_services / total,
-        sh_knowledge = knowledge / total
+        sh_industry = industry / total_jobs,
+        sh_trade_services = trade_services / total_jobs,
+        sh_knowledge = knowledge / total_jobs
     ) %>%
     select(c(
         geo, sh_trade_services,
-        sh_industry, sh_knowledge, total
+        sh_industry, sh_knowledge, total_jobs
     ))
-
-sh_small_bus <- dat_eurostat_filt[["bd_size_r3"]] %>%
-    filter(
-        indic_sb == "V11910",
-        sizeclas %in% c("1-9", "TOTAL")
-    ) %>%
-    pivot_wider(
-        names_from = sizeclas,
-        names_prefix = "size_",
-        values_from = values
-    ) %>%
-    mutate(sh_small_bus = `size_1-9` / size_TOTAL) %>%
-    select(c(geo, sh_small_bus))
-
-small_bus_found <- dat_eurostat_filt[["bd_size_r3"]] %>%
-    filter(
-        indic_sb == "V11920",
-        sizeclas == "1-9"
-    ) %>%
-    rename(small_bus_found = values) %>%
-    select(c(geo, small_bus_found))
 
 fert <- dat_eurostat_filt[["demo_r_find3"]] %>%
     filter(indic_de == "TOTFERRT") %>%
@@ -183,10 +154,11 @@ fert <- dat_eurostat_filt[["demo_r_find3"]] %>%
     select(c(geo, fertilty_rate))
 
 
+
+
 # Combine data --------------
 df_clean <- list(
-    pop, deaths, gdp, pop_ind, emp_type,
-    fert, small_bus_found, sh_small_bus
+    pop, deaths, gdp, pop_ind, emp_type, fert
 )
 
 dat_comb <- Reduce(function(x, y) merge(x, y, by = "geo", all.x = TRUE),
@@ -195,9 +167,11 @@ dat_comb <- Reduce(function(x, y) merge(x, y, by = "geo", all.x = TRUE),
 )
 
 rm(
-    df_clean, pop, deaths, gdp, pop_ind, emp_type,
-    fert, small_bus_found, sh_small_bus
+    df_clean, pop, deaths, gdp, pop_ind, emp_type, fert
 )
+
+
+
 
 
 # clean data and order
@@ -206,42 +180,33 @@ export_data_tbl <- dat_comb %>%
     select(-c(geometry))
 View(export_data_tbl)
 
-# imp data
-imp_data <- export_data %>%
-    group_by(country, urbn_type) %>%
-    mutate(across(
-        .cols = where(is.numeric),
-        .fns =
-            ~ case_when(
-                is.na(.) ~ mean(., na.rm = T), # replaces NAs
-                !is.na(.) ~ .
-            )
-    )) %>%
-    ungroup() %>%
-    group_by(country) %>%
-    mutate(across(
-        .cols = where(is.numeric),
-        .fns =
-            ~ case_when(
-                is.na(.) ~ mean(., na.rm = T), # replaces NAs
-                !is.na(.) ~ .
-            )
-    )) %>%
-    ungroup() %>%
-    mutate(
-        industry_jobs = round(industry_jobs, 0),
-        low_skill_jobs = round(low_skill_jobs, 0),
-        small_bus_found = round(small_bus_found, 0)
-    ) %>%
-    arrange(country)
 
-# export
+# Export data --------------
+export_data_tbl <- dat_comb %>%
+    as_tibble() %>%
+    select(-c(geometry))
+
+
 write.table(
-    x = imp_data,
-    file = "data/nuts3_data.csv",
+    x = export_data_tbl,
+    file = "data/nuts2/nuts2_data.csv",
     sep = ",",
     row.names = FALSE
 )
+
+# If data is needed for a map, export as geojson
+export_data_geo <- dat_comb %>%
+    filter(country %!in% excl_cntrs)
+
+st_write(export_data_geo, "data/nuts2/nuts2_data_geo.geojson")
+
+
+
+
+
+
+
+
 
 
 # create overview map
@@ -261,7 +226,6 @@ nuts3_map <- dat_comb %>%
     ) +
     annotation_scale(height = unit(0.15, "cm"))
 
-nuts3_map
 
 
 # save map
