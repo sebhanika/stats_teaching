@@ -20,8 +20,8 @@ The data is obtained from Eurostat through the *eurostat* package. The script fo
 
 | Variable         | Description                                          | Note                                                                                         |
 |------------------|------------------------------------------------------|----------------------------------------------------------------------------------------------|
-| nuts_name        | Name of the NUTS2 region                             |                                                                                              |
 | geo              | Code of the NUTS2 region                             |                                                                                              |
+| nuts_name        | Name of the NUTS2 region                             |                                                                                              |
 | country          | Name of country                                      |                                                                                              |
 | cntr_code        | Code of Country                                      |                                                                                              |
 | region           | Name of region                                       |                                                                                              |
