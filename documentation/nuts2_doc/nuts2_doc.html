@@ -84,11 +84,13 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="variables" class="level2">
 <h2 class="anchored" data-anchor-id="variables">Variables</h2>
+<div id="tbl-letters-variables" class="anchored">
 <table class="table">
+<caption>Table&nbsp;1: Variables</caption>
 <colgroup>
-<col style="width: 10%">
-<col style="width: 32%">
-<col style="width: 56%">
+<col style="width: 20%">
+<col style="width: 40%">
+<col style="width: 40%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -124,18 +126,18 @@ ul.task-list li input[type="checkbox"] {
 <td></td>
 </tr>
 <tr class="even">
-<td>blue_banana</td>
-<td>Part of blue banana region</td>
-<td>1 = yes, 0 = no</td>
-</tr>
-<tr class="odd">
-<td>pop_2019</td>
-<td>Total population</td>
+<td>area</td>
+<td>Area in square kilometer</td>
 <td></td>
 </tr>
+<tr class="odd">
+<td>landlocked</td>
+<td>Is the region landlocked?</td>
+<td>1 = yes, 0 = no</td>
+</tr>
 <tr class="even">
-<td>popgrw_2014_2019</td>
-<td>Population growth between 2014 and 2019 in percent</td>
+<td>pop</td>
+<td>Total population</td>
 <td></td>
 </tr>
 <tr class="odd">
@@ -144,28 +146,48 @@ ul.task-list li input[type="checkbox"] {
 <td></td>
 </tr>
 <tr class="even">
-<td>gdp</td>
-<td>Gross domestic product in Million Euros (PPS)</td>
-<td></td>
+<td>mig_rate</td>
+<td>Crude rate of net migration</td>
+<td>The crude rate of net migration is the ratio of net migration to the average population.</td>
 </tr>
 <tr class="odd">
+<td>pop_grw_rate</td>
+<td>Population growth rate</td>
+<td>Population growth rate from 2018 to 2019.</td>
+</tr>
+<tr class="even">
 <td>le_t</td>
 <td>Total life expectancy in years</td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>le_gap</td>
 <td>Gap between male and female life expectancy in years</td>
 <td>It was calculated by subtracting male life expectancy from female life expectancy</td>
 </tr>
+<tr class="even">
+<td>gdp</td>
+<td>Gross domestic product in Million Euros (PPS)<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></td>
+<td></td>
+</tr>
 <tr class="odd">
-<td>industry_jobs</td>
-<td>Number of persons employed in Industry jobs</td>
+<td>sh_trade_services</td>
+<td>Share of workers employed in trade and service jobs</td>
 <td></td>
 </tr>
 <tr class="even">
-<td>low_skill_jobs</td>
-<td>Number of persons employed in low skill jobs</td>
+<td>sh_industry</td>
+<td>Share of workers employed in Industry jobs</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>sh_knowledge</td>
+<td>Share of workers employed in knowledge-intensive</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>total_jobs</td>
+<td>Total number of persons employed</td>
 <td></td>
 </tr>
 <tr class="odd">
@@ -179,17 +201,13 @@ ul.task-list li input[type="checkbox"] {
 <td>It was calculated by subtracting female hours worked from male hours worked</td>
 </tr>
 <tr class="odd">
-<td>mig_rate</td>
-<td>Crude rate of net migration</td>
-<td>The crude rate of net migration is the ratio of net migration to the average population.</td>
-</tr>
-<tr class="even">
-<td>unemp_rate</td>
-<td>Unemployment rate in percent</td>
+<td>sh_unemp</td>
+<td>Share of unemployed persons</td>
 <td>The unemployment rate is the number of people unemployed as a percentage of the labor force.</td>
 </tr>
 </tbody>
 </table>
+</div>
 </section>
 <section id="data-preparation" class="level2">
 <h2 class="anchored" data-anchor-id="data-preparation">Data Preparation</h2>
@@ -200,7 +218,13 @@ ul.task-list li input[type="checkbox"] {
 <h2 class="anchored" data-anchor-id="misc">Misc</h2>
 </section>
 
-</main>
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>PPS (Purchasing Power Standard) for GDP is a metric used to compare and standardize the economic output of different countries by accounting for differences in price levels and cost of living. It allows for a more meaningful comparison of GDP between nations by adjusting for variations in purchasing power<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main>
 <!-- /main column -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {

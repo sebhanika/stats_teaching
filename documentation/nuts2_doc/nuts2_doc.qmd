@@ -26,21 +26,24 @@ The data is obtained from Eurostat through the *eurostat* package. The script fo
 | cntr_code        | Code of Country                                      |                                                                                              |
 | region           | Name of region                                       |                                                                                              |
 | area             | Area in square kilometer                             |                                                                                              |
-| landlocked       | Is the region landlocked                             | 1 = yes, 0 = no                                                                              |
-
-| pop_2019         | Total population                                     |                                                                                              |
-| popgrw_2014_2019 | Population growth between 2014 and 2019 in percent   |                                                                                              |
+| landlocked       | Is the region landlocked?                            | 1 = yes, 0 = no                                                                              |
+| pop              | Total population                                     |                                                                                              |
 | median_age       | Median age of the population in years                |                                                                                              |
-| gdp              | Gross domestic product in Million Euros (PPS)        |                                                                                              |
+| mig_rate         | Crude rate of net migration                          | The crude rate of net migration is the ratio of net migration to the average population.     |
+| pop_grw_rate     | Population growth rate                               | Population growth rate from 2018 to 2019.                                                    |
 | le_t             | Total life expectancy in years                       |                                                                                              |
 | le_gap           | Gap between male and female life expectancy in years | It was calculated by subtracting male life expectancy from female life expectancy            |
-| industry_jobs    | Number of persons employed in Industry jobs          |                                                                                              |
-| low_skill_jobs   | Number of persons employed in low skill jobs         |                                                                                              |
+| gdp              | Gross domestic product in Million Euros (PPS)^[PPS (Purchasing Power Standard) for GDP is a metric used to compare and standardize the economic output of different countries by accounting for differences in price levels and cost of living. It allows for a more meaningful comparison of GDP between nations by adjusting for variations in purchasing power]                                                                    |                                                                                              |
+| sh_trade_services| Share of workers employed in trade and service jobs  |                                                                                              |
+| sh_industry      | Share of workers employed in Industry jobs           |                                                                                              |
+| sh_knowledge     | Share of workers employed in knowledge-intensive     |                                                                                              |
+| total_jobs       | Total number of persons employed                     |                                                                                              |
 | hrs_t            | Average number of hours worked                       |                                                                                              |
 | hrs_gap          | Gap between male workers and female workers          | It was calculated by subtracting female hours worked from male hours worked                  |
-| mig_rate         | Crude rate of net migration                          | The crude rate of net migration is the ratio of net migration to the average population.     |
-| unemp_rate       | Unemployment rate in percent                         | The unemployment rate is the number of people unemployed as a percentage of the labor force. |
+| sh_unemp         | Share of unemployed persons                          | The unemployment rate is the number of people unemployed as a percentage of the labor force. |
 
+: Variables {#tbl-letters}
+: Variables {tbl-colwidths="[20,40, 40]"}
 
 ## Data Preparation
 
