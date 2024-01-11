@@ -231,7 +231,11 @@ df_clean <- list(pop, pop_ind, gdp, le, emp_type, hours_wrk, pop_change, unemp)
 dat_comb <- Reduce(function(x, y) merge(x, y, by = "geo", all.x = TRUE),
     df_clean,
     init = nuts2
-)
+) %>%
+    relocate(mig_rate, .after = median_age) %>%
+    relocate(pop_grw_rate, .before = le_T) %>%
+    relocate(gdp, .before = sh_trade_services)
+
 
 rm(
     df_clean, pop, edu, emp_type, gdp, hours_wrk,
@@ -262,11 +266,8 @@ categ_missing <- dat_comb %>%
         .fns = list(nmiss = ~ sum(is.na(.)) / length(.) * 100)
     ))
 
-View(categ_missing)
 
-# looks better! lets remove these countries
-# Most of them are not EU countries and croatia has too many NAs
-
+#  lets remove these countries, Most of them are not EU countries
 excl_cntrs <- c(
     "United Kingdom", "Croatia",
     "Albania", "Liechtenstein",
@@ -278,10 +279,7 @@ excl_cntrs <- c(
 export_data_tbl <- dat_comb %>%
     as_tibble() %>%
     select(-c(geometry)) %>%
-    filter(country %!in% excl_cntrs) %>%
-    relocate(mig_rate, .after = median_age) %>%
-    relocate(pop_grw_rate, .before = le_T) %>%
-    relocate(gdp, .before = sh_trade_services)
+    filter(country %!in% excl_cntrs)
 
 write.table(
     x = export_data_tbl,
