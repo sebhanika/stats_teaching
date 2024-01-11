@@ -1,5 +1,5 @@
 ---
-title: "NUT3 Documentation"
+title: "NUTS3 - Baltic Sea Documentation"
 author: "Sebastian Hanika"
 date: "`r Sys.Date()`"
 format: html
@@ -7,7 +7,7 @@ format: html
 
 ## Purpose
 
-This is a teaching dataset designed for introductory courses in quantitative methods and statistics. It includes a variety of socio-economic and demographic variables for NUTS3 regions in the region around the baltic sea. The aim is to create a straightforward dataset with variables that are not overly complicated and are easy for students to understand, allowing them to explore descriptive and simple inferential statistics. It's important to note that not every student may be familiar with the concept of NUTS regions, so explanations about them and their differences should be provided in the instructions.
+This is a teaching dataset designed for introductory courses in quantitative methods and statistics. It includes a variety of socio-economic and demographic variables for NUTS3 regions in the region around the **Baltic Sea**. The aim is to create a straightforward dataset with variables that are not overly complicated and are easy for students to understand, allowing them to explore descriptive and simple inferential statistics. It's important to note that not every student may be familiar with the concept of NUTS regions, so explanations about them and their differences should be provided in the instructions.
 
 
 ## Source
@@ -37,12 +37,10 @@ The data is obtained from Eurostat through the *eurostat* package. The script fo
 | total_jobs       | Total number of persons employed                     |                                                                                              |
 
 : Variables {#tbl-letters}
-: Variables {tbl-colwidths="[20,40, 40]"}
+: Variables {tbl-colwidths="[20,50,30]"}
 
 ## Data Preparation
 
 All variables are based on the year 2019, striking a balance between data completeness and avoiding unintended developments related to Covid-19. Future updates will be based on more timely data as they become available. If you wish to include the influence of Covid-19, adjusting the script for the desired year is a simple process.
-
-I excluded some countries from the dataset due to missing data for key variables. Most of them are either ETFA or EU-neighboring countries, with the exception of Croatia, which was excluded despite being an EU country.
 
 
