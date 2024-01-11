@@ -23,12 +23,12 @@ The data is obtained from Eurostat through the *eurostat* package. The script fo
 | geo              | Code of the NUTS2 region                             |                                                                                              |
 | country          | Name of country                                      |                                                                                              |
 | nuts_name        | Name of the NUTS2 region                             |                                                                                              |
-| urbn_type        | Urban rural typology                                 |                                                                                              |
+| urbn_type        | Urban-rural typology                                 | 3 types: 1 = urban, 2 = intermediate, 3 = rural                                              |
 | landlocked       | Is the region landlocked?                            | 1 = yes, 0 = no                                                                              |
 | area             | Area in square kilometer                             |                                                                                              |
 | pop              | Total population                                     |                                                                                              |
 | death_rate       | Deaths per 1000 people                               |                                                                                              |
-| fert_rate        | Fertilty rate                                        | Average number of children born per women                                                    |
+| fert_rate        | Fertility rate                                       | Average number of children born per women                                                    |
 | median_age       | Median age of the population in years                |                                                                                              |
 | gdp              | Gross domestic product in Million Euros (PPS)^[PPS (Purchasing Power Standard) for GDP is a metric used to compare and standardize the economic output of different countries by accounting for differences in price levels and cost of living. It allows for a more meaningful comparison of GDP between nations by adjusting for variations in purchasing power]                                                                    |                                                                                              |
 | sh_trade_services| Share of workers employed in trade and service jobs  |                                                                                              |
