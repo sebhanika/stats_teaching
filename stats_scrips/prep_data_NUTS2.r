@@ -109,7 +109,7 @@ names(dat_eurostat) <- names_eurostat
 dat_eurostat_filt <- lapply(dat_eurostat, function(x) {
     x %>%
         filter(
-            time == 2019,
+            TIME_PERIOD == 2019,
             nchar(geo) == 4
         )
 })
@@ -120,17 +120,17 @@ pop <- dat_eurostat_filt[["demo_r_d2jan"]] %>%
         age == "TOTAL"
     ) %>%
     rename(pop = values) %>%
-    select(-c(unit, sex, age, time))
+    select(-c(unit, sex, age, TIME_PERIOD))
 
 pop_ind <- dat_eurostat_filt[["demo_r_pjanind2"]] %>%
     filter(indic_de == "MEDAGEPOP") %>%
     rename(median_age = values) %>%
-    select(-c(unit, time, indic_de))
+    select(-c(unit, TIME_PERIOD, indic_de))
 
 gdp <- dat_eurostat_filt[["nama_10r_2gdp"]] %>%
     filter(unit == "MIO_PPS_EU27_2020") %>% # PPS, EU27 from 2020
     mutate(gdp = values * 1000000) %>%
-    select(-c(unit, time, values))
+    select(-c(unit, TIME_PERIOD, values))
 
 edu <- dat_eurostat_filt[["edat_lfse_04"]] %>%
     filter(
@@ -143,7 +143,7 @@ edu <- dat_eurostat_filt[["edat_lfse_04"]] %>%
         values_from = values,
         names_prefix = "sh_"
     ) %>%
-    select(-c(unit, age, time))
+    select(-c(unit, age, TIME_PERIOD))
 
 unemp <- dat_eurostat_filt[["lfst_r_lfu3rt"]] %>%
     filter(
@@ -152,7 +152,7 @@ unemp <- dat_eurostat_filt[["lfst_r_lfu3rt"]] %>%
         sex == "T"
     ) %>%
     rename(sh_unemp = values) %>%
-    select(-c(isced11, age, sex, time, unit))
+    select(-c(isced11, age, sex, TIME_PERIOD, unit))
 
 hours_wrk <- dat_eurostat_filt[["lfst_r_lfe2ehour"]] %>%
     filter(age == "Y25-64") %>%
@@ -161,7 +161,7 @@ hours_wrk <- dat_eurostat_filt[["lfst_r_lfe2ehour"]] %>%
         values_from = values
     ) %>%
     mutate(hrs_gap = hrs_M - hrs_F) %>%
-    select(-c(unit, time, hrs_F, hrs_M, age))
+    select(-c(unit, TIME_PERIOD, hrs_F, hrs_M, age))
 
 emp_type <- dat_eurostat_filt[["lfst_r_lfe2en2"]] %>%
     filter(
@@ -217,7 +217,7 @@ pop_change <- dat_eurostat_filt[["tgs00099"]] %>%
         mig_rate = CNMIGRATRT, # per 1000 persons!
         grw_rate = GROWRT
     ) %>%
-    select(-c(time))
+    select(-c(TIME_PERIOD))
 
 
 # combine data using Reduce to save space,
