@@ -59,9 +59,6 @@ nuts2 <- nuts2_v1 %>%
     left_join(coasts_nuts2, by = "geo") %>%
     mutate(landlocked = as.factor(ifelse(is.na(landlocked), 1, 0)))
 
-nuts2 %>% ggplot() +
-    geom_sf(aes(fill = landlocked))
-
 rm(coast_lines, nuts2_v1, coasts_nuts2)
 
 # Download Eurostat data  --------------
