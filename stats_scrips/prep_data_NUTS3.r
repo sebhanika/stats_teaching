@@ -9,8 +9,6 @@ library(tidyverse)
 library(sf)
 library(eurostat)
 library(countrycode)
-library(ggspatial)
-library(ggthemes)
 
 # Download data -----------------------------------------------------------
 
@@ -60,8 +58,6 @@ download_eurostat <- function(dataset_name) {
 
 dat_eurostat <- lapply(names_eurostat, download_eurostat)
 names(dat_eurostat) <- names_eurostat
-
-
 
 
 # Temp dave data ----------------------------------------------------------
@@ -154,8 +150,6 @@ fert <- dat_eurostat_filt[["demo_r_find3"]] %>%
     select(c(geo, fertilty_rate))
 
 
-
-
 # Combine data --------------
 df_clean <- list(
     pop, deaths, gdp, pop_ind, emp_type, fert
@@ -169,9 +163,6 @@ dat_comb <- Reduce(function(x, y) merge(x, y, by = "geo", all.x = TRUE),
 rm(
     df_clean, pop, deaths, gdp, pop_ind, emp_type, fert
 )
-
-
-
 
 
 # Export data --------------
@@ -189,38 +180,3 @@ write.table(
 
 # If data is needed for a map, export as geojson
 st_write(dat_comb, "data/nuts3/nuts3_data_geo.geojson")
-
-
-
-
-
-
-
-
-
-
-# create overview map
-nuts3_map <- dat_comb %>%
-    ggplot() +
-    geom_sf(aes(fill = "1"),
-        linewidth = 0.2,
-        alpha = 0.8
-    ) +
-    scale_fill_manual(values = "#3e7af9") +
-    labs(caption = "Source: Eurostat") +
-    theme_base() +
-    theme(
-        axis.text = element_blank(),
-        axis.ticks = element_blank(),
-        legend.position = "None"
-    ) +
-    annotation_scale(height = unit(0.15, "cm"))
-
-
-
-# save map
-ggsave(
-    filename = "data/nuts3_map.png",
-    plot = nuts3_map,
-    width = 9, height = 16, units = "cm"
-)
