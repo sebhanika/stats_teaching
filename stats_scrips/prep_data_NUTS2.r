@@ -52,12 +52,15 @@ coast_lines <- gisco_get_countries(
 coasts_nuts2 <- st_intersection(nuts2_v1, coast_lines) %>%
     as_tibble() %>%
     select(c(geo)) %>%
-    mutate(landlocked = 1) %>%
+    mutate(landlocked = 0) %>%
     distinct() # st_interesction creates duplicates
 
 nuts2 <- nuts2_v1 %>%
     left_join(coasts_nuts2, by = "geo") %>%
-    mutate(landlocked = as.factor(ifelse(is.na(landlocked), 0, TRUE)))
+    mutate(landlocked = as.factor(ifelse(is.na(landlocked), 1, 0)))
+
+nuts2 %>% ggplot() +
+    geom_sf(aes(fill = landlocked))
 
 rm(coast_lines, nuts2_v1, coasts_nuts2)
 
@@ -120,17 +123,17 @@ pop <- dat_eurostat_filt[["demo_r_d2jan"]] %>%
         age == "TOTAL"
     ) %>%
     rename(pop = values) %>%
-    select(-c(unit, sex, age, TIME_PERIOD))
+    select(c(geo, pop))
 
 pop_ind <- dat_eurostat_filt[["demo_r_pjanind2"]] %>%
     filter(indic_de == "MEDAGEPOP") %>%
     rename(median_age = values) %>%
-    select(-c(unit, TIME_PERIOD, indic_de))
+    select(c(geo, median_age))
 
 gdp <- dat_eurostat_filt[["nama_10r_2gdp"]] %>%
     filter(unit == "MIO_PPS_EU27_2020") %>% # PPS, EU27 from 2020
     mutate(gdp = values * 1000000) %>%
-    select(-c(unit, TIME_PERIOD, values))
+    select(c(geo, gdp))
 
 edu <- dat_eurostat_filt[["edat_lfse_04"]] %>%
     filter(
@@ -143,7 +146,7 @@ edu <- dat_eurostat_filt[["edat_lfse_04"]] %>%
         values_from = values,
         names_prefix = "sh_"
     ) %>%
-    select(-c(unit, age, TIME_PERIOD))
+    select(-c(unit, age, TIME_PERIOD, freq))
 
 unemp <- dat_eurostat_filt[["lfst_r_lfu3rt"]] %>%
     filter(
@@ -152,7 +155,7 @@ unemp <- dat_eurostat_filt[["lfst_r_lfu3rt"]] %>%
         sex == "T"
     ) %>%
     rename(sh_unemp = values) %>%
-    select(-c(isced11, age, sex, TIME_PERIOD, unit))
+    select(c(geo, sh_unemp))
 
 hours_wrk <- dat_eurostat_filt[["lfst_r_lfe2ehour"]] %>%
     filter(age == "Y25-64") %>%
@@ -161,7 +164,7 @@ hours_wrk <- dat_eurostat_filt[["lfst_r_lfe2ehour"]] %>%
         values_from = values
     ) %>%
     mutate(hrs_gap = hrs_M - hrs_F) %>%
-    select(-c(unit, TIME_PERIOD, hrs_F, hrs_M, age))
+    select(c(geo, hrs_T, hrs_gap))
 
 emp_type <- dat_eurostat_filt[["lfst_r_lfe2en2"]] %>%
     filter(
@@ -175,7 +178,7 @@ emp_type <- dat_eurostat_filt[["lfst_r_lfe2en2"]] %>%
         )
     ) %>%
     mutate(nace_r2 = case_when(
-        nace_r2 == "TOTAL" ~ "total",
+        nace_r2 == "TOTAL" ~ "total_jobs",
         nace_r2 == "B-E" ~ "industry",
         nace_r2 == "G-I" ~ "trade_services",
         nace_r2 == "M_N" ~ "knowledge"
@@ -185,13 +188,13 @@ emp_type <- dat_eurostat_filt[["lfst_r_lfe2en2"]] %>%
         values_from = values,
     ) %>%
     mutate(
-        sh_industry = industry / total,
-        sh_trade_services = trade_services / total,
-        sh_knowledge = knowledge / total
+        sh_industry = industry / total_jobs,
+        sh_trade_services = trade_services / total_jobs,
+        sh_knowledge = knowledge / total_jobs
     ) %>%
     select(c(
         geo, sh_trade_services,
-        sh_industry, sh_knowledge, total
+        sh_industry, sh_knowledge, total_jobs
     ))
 
 le <- dat_eurostat_filt[["demo_r_mlifexp"]] %>%
@@ -217,7 +220,7 @@ pop_change <- dat_eurostat_filt[["tgs00099"]] %>%
         mig_rate = CNMIGRATRT, # per 1000 persons!
         grw_rate = GROWRT
     ) %>%
-    select(-c(TIME_PERIOD))
+    select(-c(TIME_PERIOD, freq))
 
 
 # combine data using Reduce to save space,
