@@ -25,7 +25,9 @@ The data is obtained from Eurostat through the *eurostat* package. The script fo
 | country          | Name of country                                      |                                                                                              |
 | cntr_code        | Code of Country                                      |                                                                                              |
 | region           | Name of region                                       |                                                                                              |
-| blue_banana      | Part of blue banana region                           | 1 = yes, 0 = no                                                                              |
+| area             | Area in square kilometer                             |                                                                                              |
+| landlocked       | Is the region landlocked                             | 1 = yes, 0 = no                                                                              |
+
 | pop_2019         | Total population                                     |                                                                                              |
 | popgrw_2014_2019 | Population growth between 2014 and 2019 in percent   |                                                                                              |
 | median_age       | Median age of the population in years                |                                                                                              |
