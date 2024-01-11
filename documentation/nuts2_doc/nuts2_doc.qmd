@@ -1,0 +1,50 @@
+---
+title: "NUTS2 Documentation"
+author: "Sebastian Hanika"
+date: "`r Sys.Date()`"
+format: html
+---
+
+## Purpose
+
+This is a teaching dataset designed for introductory courses in quantitative methods and statistics. It includes a variety of socio-economic and demographic variables for NUTS2 regions. The aim is to create a straightforward dataset with variables that are not overly complicated and are easy for students to understand, allowing them to explore descriptive and simple inferential statistics. It's important to note that not every student may be familiar with the concept of NUTS regions, so explanations about them and their differences should be provided in the instructions.
+
+## Source
+
+The data is obtained from Eurostat through the *eurostat* package. The script for generating the dataset can be accessed [here](https://github.com/sebhanika/stats_teaching/blob/main/stats_scrips/prep_data_NUTS2.r). Utilizing this script, it should be straightforward to recreate and customize the dataset according to your preferences.
+
+
+
+## Variables
+
+
+| Variable         | Description                                          | Note                                                                                         |
+|------------------|------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| nuts_name        | Name of the NUTS2 region                             |                                                                                              |
+| geo              | Code of the NUTS2 region                             |                                                                                              |
+| country          | Name of country                                      |                                                                                              |
+| cntr_code        | Code of Country                                      |                                                                                              |
+| region           | Name of region                                       |                                                                                              |
+| blue_banana      | Part of blue banana region                           | 1 = yes, 0 = no                                                                              |
+| pop_2019         | Total population                                     |                                                                                              |
+| popgrw_2014_2019 | Population growth between 2014 and 2019 in percent   |                                                                                              |
+| median_age       | Median age of the population in years                |                                                                                              |
+| gdp              | Gross domestic product in Million Euros (PPS)        |                                                                                              |
+| le_t             | Total life expectancy in years                       |                                                                                              |
+| le_gap           | Gap between male and female life expectancy in years | It was calculated by subtracting male life expectancy from female life expectancy            |
+| industry_jobs    | Number of persons employed in Industry jobs          |                                                                                              |
+| low_skill_jobs   | Number of persons employed in low skill jobs         |                                                                                              |
+| hrs_t            | Average number of hours worked                       |                                                                                              |
+| hrs_gap          | Gap between male workers and female workers          | It was calculated by subtracting female hours worked from male hours worked                  |
+| mig_rate         | Crude rate of net migration                          | The crude rate of net migration is the ratio of net migration to the average population.     |
+| unemp_rate       | Unemployment rate in percent                         | The unemployment rate is the number of people unemployed as a percentage of the labor force. |
+
+
+## Data Preparation
+
+All variables are based on the year 2019, striking a balance between data completeness and avoiding unintended developments related to Covid-19. Future updates will be based on more timely data as they become available. If you wish to include the influence of Covid-19, adjusting the script for the desired year is a simple process.
+
+I excluded some countreis from the dataset due to missing data for some key varaibles. Most of them are ETFA or EU-neighbor countries with the exception of Croatia being explided as the only EU country.
+
+## Misc
+
