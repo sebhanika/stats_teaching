@@ -174,13 +174,6 @@ rm(
 
 
 
-# clean data and order
-export_data_tbl <- dat_comb %>%
-    as_tibble() %>%
-    select(-c(geometry))
-View(export_data_tbl)
-
-
 # Export data --------------
 export_data_tbl <- dat_comb %>%
     as_tibble() %>%
@@ -189,16 +182,13 @@ export_data_tbl <- dat_comb %>%
 
 write.table(
     x = export_data_tbl,
-    file = "data/nuts2/nuts2_data.csv",
+    file = "data/nuts3/nuts3_data.csv",
     sep = ",",
     row.names = FALSE
 )
 
 # If data is needed for a map, export as geojson
-export_data_geo <- dat_comb %>%
-    filter(country %!in% excl_cntrs)
-
-st_write(export_data_geo, "data/nuts2/nuts2_data_geo.geojson")
+st_write(dat_comb, "data/nuts3/nuts3_data_geo.geojson")
 
 
 
