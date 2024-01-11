@@ -35,10 +35,10 @@ nuts3_baltic <-
     )) %>%
     mutate(
         area = as.numeric(st_area(geometry) / 1000000),
-        coast = ifelse(coast_type == 1, 1, 0)
+        landlocked = ifelse(coast_type == 1, 0, 1)
     ) %>%
     rename(nuts2_name = name_latn) %>%
-    select(c(country, nuts2_name, geo, urbn_type, coast, geometry, area))
+    select(c(country, nuts2_name, geo, urbn_type, landlocked, geometry, area))
 
 
 names_eurostat <- c(
@@ -158,7 +158,9 @@ df_clean <- list(
 dat_comb <- Reduce(function(x, y) merge(x, y, by = "geo", all.x = TRUE),
     df_clean,
     init = nuts3_baltic
-)
+) %>%
+    relocate(fertilty_rate, .after = death_rate) %>%
+    relocate(gdp, .before = sh_trade_services)
 
 rm(
     df_clean, pop, deaths, gdp, pop_ind, emp_type, fert
@@ -169,7 +171,6 @@ rm(
 export_data_tbl <- dat_comb %>%
     as_tibble() %>%
     select(-c(geometry))
-
 
 write.table(
     x = export_data_tbl,
