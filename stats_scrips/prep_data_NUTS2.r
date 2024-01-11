@@ -218,7 +218,7 @@ pop_change <- dat_eurostat_filt[["tgs00099"]] %>%
     ) %>%
     rename(
         mig_rate = CNMIGRATRT, # per 1000 persons!
-        grw_rate = GROWRT
+        pop_grw_rate = GROWRT
     ) %>%
     select(-c(TIME_PERIOD, freq))
 
@@ -278,7 +278,10 @@ excl_cntrs <- c(
 export_data_tbl <- dat_comb %>%
     as_tibble() %>%
     select(-c(geometry)) %>%
-    filter(country %!in% excl_cntrs)
+    filter(country %!in% excl_cntrs) %>%
+    relocate(mig_rate, .after = median_age) %>%
+    relocate(pop_grw_rate, .before = le_T) %>%
+    relocate(gdp, .before = sh_trade_services)
 
 write.table(
     x = export_data_tbl,
