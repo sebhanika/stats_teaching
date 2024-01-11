@@ -1,0 +1,48 @@
+---
+title: "NUT3 Documentation"
+author: "Sebastian Hanika"
+date: "`r Sys.Date()`"
+format: html
+---
+
+## Purpose
+
+This is a teaching dataset designed for introductory courses in quantitative methods and statistics. It includes a variety of socio-economic and demographic variables for NUTS3 regions in the region around the baltic sea. The aim is to create a straightforward dataset with variables that are not overly complicated and are easy for students to understand, allowing them to explore descriptive and simple inferential statistics. It's important to note that not every student may be familiar with the concept of NUTS regions, so explanations about them and their differences should be provided in the instructions.
+
+
+## Source
+
+The data is obtained from Eurostat through the *eurostat* package. The script for generating the dataset can be accessed [here](https://github.com/sebhanika/stats_teaching/blob/main/stats_scrips/prep_data_NUTS3.r). Utilizing this script, it should be straightforward to recreate and customize the dataset according to your preferences.
+
+
+## Variables
+
+
+| Variable         | Description                                          | Note                                                                                         |
+|------------------|------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| geo              | Code of the NUTS2 region                             |                                                                                              |
+| country          | Name of country                                      |                                                                                              |
+| nuts_name        | Name of the NUTS2 region                             |                                                                                              |
+| urbn_type        | Urban rural typology                                 |                                                                                              |
+| landlocked       | Is the region landlocked?                            | 1 = yes, 0 = no                                                                              |
+| area             | Area in square kilometer                             |                                                                                              |
+| pop              | Total population                                     |                                                                                              |
+| death_rate       | Deaths per 1000 people                               |                                                                                              |
+| fert_rate        | Fertilty rate                                        | Average number of children born per women                                                    |
+| median_age       | Median age of the population in years                |                                                                                              |
+| gdp              | Gross domestic product in Million Euros (PPS)^[PPS (Purchasing Power Standard) for GDP is a metric used to compare and standardize the economic output of different countries by accounting for differences in price levels and cost of living. It allows for a more meaningful comparison of GDP between nations by adjusting for variations in purchasing power]                                                                    |                                                                                              |
+| sh_trade_services| Share of workers employed in trade and service jobs  |                                                                                              |
+| sh_industry      | Share of workers employed in Industry jobs           |                                                                                              |
+| sh_knowledge     | Share of workers employed in knowledge-intensive     |                                                                                              |
+| total_jobs       | Total number of persons employed                     |                                                                                              |
+
+: Variables {#tbl-letters}
+: Variables {tbl-colwidths="[20,40, 40]"}
+
+## Data Preparation
+
+All variables are based on the year 2019, striking a balance between data completeness and avoiding unintended developments related to Covid-19. Future updates will be based on more timely data as they become available. If you wish to include the influence of Covid-19, adjusting the script for the desired year is a simple process.
+
+I excluded some countries from the dataset due to missing data for key variables. Most of them are either ETFA or EU-neighboring countries, with the exception of Croatia, which was excluded despite being an EU country.
+
+
