@@ -14,7 +14,6 @@ This is a teaching dataset designed for introductory courses in quantitative met
 The data is obtained from Eurostat through the *eurostat* package. The script for generating the dataset can be accessed [here](https://github.com/sebhanika/stats_teaching/blob/main/stats_scrips/prep_data_NUTS2.r). Utilizing this script, it should be straightforward to recreate and customize the dataset according to your preferences.
 
 
-
 ## Variables
 
 
@@ -49,7 +48,6 @@ The data is obtained from Eurostat through the *eurostat* package. The script fo
 
 All variables are based on the year 2019, striking a balance between data completeness and avoiding unintended developments related to Covid-19. Future updates will be based on more timely data as they become available. If you wish to include the influence of Covid-19, adjusting the script for the desired year is a simple process.
 
-I excluded some countreis from the dataset due to missing data for some key varaibles. Most of them are ETFA or EU-neighbor countries with the exception of Croatia being explided as the only EU country.
+I excluded some countries from the dataset due to missing data for key variables. Most of them are either ETFA or EU-neighboring countries, with the exception of Croatia, which was excluded despite being an EU country.
 
-## Misc
 
