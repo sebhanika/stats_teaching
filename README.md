@@ -1,6 +1,7 @@
-# Stats_Teaching
+# Teaching Statistics
 
-Welcome to the repository containing materials for introductory courses on quantitative methods designed for geographers. This resource has been primarily developed for courses I teach at Lund University.
+This repository contains materials for introductory courses on quantitative methods designed for geographers. This resource has been primarily developed for courses I teach at Lund University.
+Currently it only contains two teaching datasets based on NUTS2 and NUTS3 region but it will be extended in the future.
 
 ## Data
 
