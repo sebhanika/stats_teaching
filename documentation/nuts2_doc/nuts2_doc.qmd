@@ -2,7 +2,7 @@
 title: "NUTS2 Documentation"
 author: "Sebastian Hanika"
 date: "`r Sys.Date()`"
-format: html
+format: pdf
 ---
 
 ## Purpose
@@ -13,6 +13,7 @@ This is a teaching dataset designed for introductory courses in quantitative met
 
 The data is obtained from Eurostat through the *eurostat* package. The script for generating the dataset can be accessed [here](https://github.com/sebhanika/stats_teaching/blob/main/stats_scrips/prep_data_NUTS2.r). Utilizing this script, it should be straightforward to recreate and customize the dataset according to your preferences.
 
+\pagebreak
 
 ## Variables
 
