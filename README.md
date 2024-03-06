@@ -1,4 +1,4 @@
-# Teaching Statistics
+# Teaching Statistics for Human Geographers
 
 This repository contains materials for introductory courses on quantitative methods designed for geographers. This resource has been primarily developed for courses I teach at Lund University.
 It only contains two teaching datasets based on NUTS2 and NUTS3 regions but will be extended in the future.
