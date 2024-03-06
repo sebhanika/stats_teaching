@@ -9,6 +9,8 @@ The datasets provided in this repository are currently based on Eurostat, and I 
 - [NUTS2](data/nuts2/)
 - [NUTS3](data/nuts3/)
 
+The data is published as csv files with complementary geojson files if it is desired to make maps in the course. 
+
 There is detailed documentation for the different datasets available here: 
 - [Nuts2 Documentation](documentation/nuts2_doc/nuts2_doc.pdf) 
 - [Nuts3 Documentation](documentation/nuts3_doc/nuts3_doc.pdf)
