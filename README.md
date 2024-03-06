@@ -5,7 +5,7 @@ It only contains two teaching datasets based on NUTS2 and NUTS3 regions but will
 
 ## Data
 
-The datasets provided in this repository are currently based on Eurostat, and I offer the [code](stats_scripts/) necessary to generate datasets using the eurostat R package. There are two datasets available:
+The datasets provided in this repository are currently based on Eurostat, and I offer the [code](stats_scrips/) necessary to generate datasets using the eurostat R package. There are two datasets available:
 - [NUTS2](data/nuts2/)
 - [NUTS3](data/nuts3/)
 
